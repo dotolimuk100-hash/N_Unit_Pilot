@@ -1,0 +1,1557 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light only">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>N unit 설문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;800&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+html { -webkit-text-size-adjust: 100%; color-scheme: light only; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+/* Layout: one narrow column, a step rail on top; each question is a ruled row, follow-ups indent under their question. */
+:root {
+  --bg: #f1f2f4;
+  --paper: #ffffff;
+  --ink: #1b1d22;
+  --muted: #646a75;
+  --rule: #d9dce2;
+  --soft: #e7e9ed;
+  --c-self: #e2553c;   /* 개인 · 점 */
+  --c-other: #c98a12;  /* 개인과 타인 · 선 */
+  --c-env: #2f9a5e;    /* 개인과 환경 · 면 */
+  --accent: var(--c-self);
+  --no: #d23b3b;      /* 부정 · '그렇지 않다' 쪽 */
+  --yes: #2f62d0;     /* 긍정 · '그렇다' 쪽 */
+  --warn: #c23a2b;
+  --miss: #fff6d1;    /* 답하지 않은 질문 칸 */
+  --done: #1f9d55;    /* 답한 막대 손잡이 */
+  --f-display: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+header.top { display: flex; flex-direction: column; gap: 10px; }
+.brand { font-family: var(--f-mono); font-size: 13px; letter-spacing: .08em; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(30px, 7vw, 44px); line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.lede { margin: 0; color: var(--ink); font-size: 17px; font-weight: 500; line-height: 1.55; max-width: 34em; }
+.lede b { font-weight: 700; box-shadow: inset 0 -0.42em 0 color-mix(in srgb, var(--yes) 22%, transparent); }
+
+/* step rail */
+.rail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.rail .seg { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rail .bar { height: 4px; border-radius: 2px; background: var(--soft); position: relative; overflow: hidden; }
+.rail .bar::after { content: ""; position: absolute; inset: 0; background: var(--seg); transform: scaleX(0); transform-origin: left center; transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.rail .seg.past .bar::after, .rail .seg.on .bar::after { transform: scaleX(1); }
+.rail .lbl { font-size: 12px; line-height: 1.35; color: var(--ink); font-weight: 600; word-break: keep-all; opacity: 0; transform: translateY(-3px); transition: opacity .4s ease .15s, transform .4s ease .15s; }
+.rail .seg.on .lbl { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .rail .bar::after, .rail .lbl { transition: none; } }
+
+/* section head */
+.lead { margin: -6px 0 0; font-size: 15px; line-height: 1.6; color: var(--ink); text-wrap: pretty; }
+.page-head { font-family: var(--f-mono); font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: .06em; }
+.qhint { margin: -6px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.intro { display: flex; flex-direction: column; gap: 16px; }
+.about { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.about h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.about p { margin: 0; line-height: 1.65; }
+.facts { margin: 4px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 14px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }
+.agree { display: flex; gap: 10px; align-items: center; font-weight: 600; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--rule); background: var(--bg); cursor: pointer; margin-top: 4px; transition: background-color .25s ease; }
+.agree input { width: 20px; height: 20px; accent-color: var(--ink); flex: none; }
+.agree.missing { background: var(--miss); }
+.lede-in { margin: 0; font-size: 16px; line-height: 1.55; }
+.lede-in b { font-weight: 700; box-shadow: inset 0 -0.42em 0 color-mix(in srgb, var(--yes) 22%, transparent); }
+@media (max-width: 520px) { .about { padding: 16px; } .facts { grid-template-columns: 1fr; gap: 0 0; } .facts dd { margin-bottom: 8px; } }
+.sec-head { display: flex; align-items: center; gap: 14px; }
+.sec-head svg { flex: none; width: 44px; height: 44px; }
+.sec-head h2 { font-family: var(--f-display); font-weight: 800; font-size: 26px; margin: 0; line-height: 1.2; }
+.sec-head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+.qlist { display: flex; flex-direction: column; background: var(--paper); border-radius: 14px; border: 1px solid var(--rule); overflow: hidden; }
+.q { padding: 22px 20px; display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--rule); }
+.q:first-child { border-top: 0; }
+.q .num { font-family: var(--f-mono); font-size: 12px; color: var(--accent); letter-spacing: .04em; }
+.q .text { font-size: 17px; font-weight: 600; line-height: 1.5; margin: 0; text-wrap: pretty; }
+.q { transition: background-color .25s ease; }
+.q.missing { background: var(--miss); }
+/* 집중 모드: 지금 질문만 또렷하게, 나머지는 흐리게 */
+.qlist.focusable { overflow: visible; background: transparent; border: 0; gap: 14px; padding: 0 6px; }
+.qlist.focusable > .q { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; opacity: .45; filter: blur(1.6px) saturate(.4); transform: scale(.96);
+  transition: opacity .3s ease, filter .3s ease, transform .3s ease, box-shadow .3s ease, border-color .3s ease, background-color .25s ease; }
+.qlist.focusable > .q:first-child { border-top: 1px solid var(--rule); }
+.qlist.focusable > .q.focus { opacity: 1; filter: none; transform: scale(1.02); border: 2px solid var(--ink); box-shadow: 0 14px 36px rgb(0 0 0 / .14); position: relative; z-index: 1; }
+.qlist.focusable > .q.missing { opacity: 1; filter: none; background: var(--miss); }
+/* 위 질문을 다 답하기 전에는 아래 질문을 누를 수 없음 */
+.qlist > .q.locked, .qlist.focusable > .q.locked, .qlist.focusable > .q.locked.focus { opacity: .38; filter: grayscale(1); transform: none; box-shadow: none; border-color: transparent; }
+.q.locked .num::after { content: "위 질문에 먼저 답해 주세요"; font-family: var(--f-body); font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--muted); }
+.end-space { height: 32vh; }
+.q.paired.reveal { animation: drop .35s ease-out; }
+.qlist.focusable > .q.paired { margin-top: -6px; border-top: 3px solid var(--rule); }
+@media (prefers-reduced-motion: reduce) { .qlist.focusable > .q { transition: none; transform: none; } }
+/* 답한 질문 표시 */
+.q .num { display: flex; align-items: center; gap: 8px; }
+.q.answered .num::after { content: "✓ 답함"; font-family: var(--f-body); font-size: 12px; font-weight: 700; letter-spacing: 0; color: #fff; background: var(--done); padding: 2px 8px; border-radius: 999px; }
+
+.q.missing .fu { background: transparent; }
+
+.fu { margin-left: 4px; padding: 16px 0 2px 16px; border-left: 3px solid var(--accent); display: flex; flex-direction: column; gap: 12px; animation: drop .28s ease-out; }
+.fu .tag { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--accent); }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fu { animation: none; } }
+
+/* spectrum */
+.spec { display: flex; flex-direction: column; gap: 6px; }
+.spec input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: pointer; touch-action: pan-y; }
+.spec input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--no), var(--soft) 50%, var(--yes)); }
+.spec input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--no), var(--soft) 50%, var(--yes)); }
+.spec input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -11px; border-radius: 50%; background: var(--paper); border: 7px solid var(--done); box-shadow: 0 0 0 5px color-mix(in srgb, var(--done) 25%, transparent); }
+.spec input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--paper); border: 7px solid var(--done); box-shadow: 0 0 0 5px color-mix(in srgb, var(--done) 25%, transparent); }
+.spec.untouched input[type=range]::-webkit-slider-thumb { border: 3px solid var(--muted); background: var(--soft); box-shadow: none; }
+.spec.untouched input[type=range]::-moz-range-thumb { border: 3px solid var(--muted); background: var(--soft); box-shadow: none; width: 20px; height: 20px; }
+.spec .ends { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.spec .hint { font-size: 12px; color: var(--muted); }
+.spec .now { font-size: 19px; font-weight: 600; min-height: 1.5em; color: var(--muted); }
+.spec .now[data-band="0"], .spec .now[data-band="1"] { color: var(--no); }
+.spec .now[data-band="3"], .spec .now[data-band="4"] { color: var(--yes); }
+.spec.untouched .now { font-size: 14px; font-weight: 500; color: var(--muted); }
+.ticks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; font-size: 12px; line-height: 1.3; word-break: keep-all; }
+.ticks span { text-align: center; color: var(--muted); }
+.ticks span:first-child { text-align: left; }
+.ticks span:last-child { text-align: right; }
+.ticks .t0, .ticks .t1 { color: var(--no); }
+.ticks .t3, .ticks .t4 { color: var(--yes); }
+.ticks .t0, .ticks .t4 { font-size: 14px; font-weight: 700; }
+
+/* choices */
+.choices { display: grid; gap: 6px; }
+.choices.five { grid-template-columns: repeat(5, 1fr); }
+.choices.three { grid-template-columns: repeat(3, 1fr); }
+.choices button {
+  font-family: var(--f-body); font-size: 13px; font-weight: 600; line-height: 1.3; padding: 12px 4px; min-height: 52px;
+  border-radius: 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); cursor: pointer;
+  word-break: keep-all;
+}
+.choices button:hover { border-color: var(--ink); }
+.choices button[data-side="no"] { color: var(--no); }
+.choices button[data-side="yes"] { color: var(--yes); }
+.choices button[data-side="yes"]:hover { border-color: var(--yes); }
+.choices button[data-side="no"]:hover { border-color: var(--no); }
+.choices button[aria-pressed="true"] { background: var(--yes); border-color: var(--yes); color: var(--paper); font-weight: 700; }
+.choices button[data-side="no"][aria-pressed="true"] { background: var(--no); border-color: var(--no); }
+.choices button[data-side="mid"][aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.choices.three.has-skip { grid-template-columns: repeat(4, 1fr); }
+.choices button.skip { color: var(--muted); background: var(--soft); border-color: var(--muted); }
+.choices button.skip:hover { border-color: var(--ink); color: var(--ink); }
+.choices button.skip[aria-pressed="true"] { background: var(--muted); border-color: var(--muted); color: var(--paper); }
+
+/* number inputs */
+.numrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.numrow input[type=number] { font: inherit; width: 120px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); }
+.money-out { font-family: var(--f-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+
+/* text inputs */
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field input[type=text] { font: inherit; font-size: 20px; letter-spacing: .12em; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); }
+.field small { color: var(--muted); font-size: 13px; }
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.nav { display: flex; justify-content: space-between; gap: 10px; }
+.btn { font: inherit; font-weight: 600; padding: 14px 22px; border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); margin-left: auto; }
+.btn:disabled { opacity: .5; cursor: default; }
+
+.done { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 32px 22px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.done .shapes { display: flex; gap: 10px; }
+.done h2 { font-family: var(--f-display); font-weight: 800; font-size: 28px; margin: 0; }
+.done p { margin: 0; color: var(--muted); }
+.code { font-family: var(--f-mono); font-size: 14px; padding: 4px 10px; background: var(--soft); border-radius: 6px; color: var(--ink); }
+.status { font-size: 13px; }
+.status.bad { color: var(--warn); }
+.admin { display: flex; flex-direction: column; gap: 16px; }
+.admin h2 { font-family: var(--f-display); font-weight: 800; font-size: 26px; margin: 0; }
+.admin .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.admin .bar .count { margin-right: auto; color: var(--muted); }
+.tablewrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; }
+table.resp { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+table.resp th, table.resp td { border: 1px solid var(--rule); padding: 8px 10px; text-align: center; vertical-align: middle; white-space: nowrap; }
+table.resp th { position: sticky; top: 0; z-index: 1; background: var(--soft); font-weight: 600; font-size: 12px; }
+table.resp th.fu { background: #fbe9c8; color: #6b4a08; }
+table.resp th.sum { background: #dceee3; color: #1d4d31; }
+table.resp td.sum { background: color-mix(in srgb, #dceee3 40%, var(--paper)); }
+table.resp .big { display: block; font-family: var(--f-mono); font-size: 18px; font-weight: 600; line-height: 1.15; font-variant-numeric: tabular-nums; }
+table.resp .small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+table.resp td.none { color: var(--muted); }
+.who { font: inherit; font-weight: 700; color: var(--yes); background: none; border: 0; padding: 2px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.drawer-bg { position: fixed; inset: 0; background: rgb(0 0 0 / .28); z-index: 40; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(980px, 100%); background: var(--bg); z-index: 41; overflow-y: auto;
+  box-shadow: -12px 0 40px rgb(0 0 0 / .18); padding: calc(18px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) 18px;
+  display: flex; flex-direction: column; gap: 18px; }
+.drawer-head { display: flex; align-items: flex-start; gap: 10px; }
+.drawer-head h2 { font-family: var(--f-display); font-weight: 800; font-size: 24px; margin: 0; }
+.drawer-head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.drawer-head .btn { margin-left: auto; padding: 8px 14px; }
+.unit { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.unit-title { display: flex; align-items: center; gap: 8px; }
+.unit-title h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.unit-title .tag { font-size: 12px; color: var(--muted); }
+.unit-figs { display: flex; flex-wrap: wrap; gap: 10px; }
+.unit-figs figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.unit-figs figcaption { font-size: 11px; color: var(--muted); }
+.unit-figs svg { display: block; background: var(--bg); border-radius: 10px; max-width: 100%; height: auto; }
+.unit .note { font-size: 12px; color: var(--muted); margin: 0; }
+.unit-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 720px) { .unit-pair { grid-template-columns: minmax(0, 1fr); } }
+.v3 { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.v3 canvas { width: 100%; height: 260px; display: block; background: var(--bg); border-radius: 10px; }
+.v3 svg { background: var(--bg); border-radius: 10px; }
+.v3 figcaption { font-size: 11px; color: var(--muted); text-align: center; }
+.line-views { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 8px; }
+.line-views figure { margin: 0; display: flex; flex-direction: column; gap: 4px; background: var(--bg); border-radius: 10px; padding: 6px; }
+.line-views figcaption, .unit-figs figcaption { font-size: 11px; color: var(--muted); text-align: center; }
+.views { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.vbtn { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; }
+.vbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.v3 canvas { height: auto !important; min-height: 280px; touch-action: none; }
+.counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.counts div { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.counts b { font-family: var(--f-mono); font-size: 22px; font-weight: 600; }
+.counts span { font-size: 12px; color: var(--muted); }
+.vals { width: 100%; border-collapse: collapse; font-size: 13px; }
+.vals th, .vals td { border-bottom: 1px solid var(--rule); padding: 7px 6px; text-align: center; vertical-align: middle; }
+.vals th { font-size: 11px; color: var(--muted); font-weight: 600; }
+.vals td.l { text-align: left; }
+.vals .n { font-family: var(--f-mono); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.vals .s { display: block; font-size: 11px; color: var(--muted); }
+.vals tr.furow td { color: var(--muted); background: color-mix(in srgb, #fbe9c8 35%, transparent); }
+.vals .avg { font-family: var(--f-mono); font-weight: 700; }
+.empty { padding: 28px 18px; color: var(--muted); }
+.vtabs { display: inline-flex; gap: 4px; background: var(--soft); padding: 4px; border-radius: 12px; width: max-content; }
+.vtab { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 9px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.vtab[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+#dist-view { display: flex; flex-direction: column; gap: 18px; }
+#dist-view[hidden] { display: none; }
+.dist-note { margin: 0; }
+.dsec { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.dsub { font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--rule); }
+.drow { display: flex; flex-direction: column; gap: 0; padding-top: 6px; }
+.drow.dfu { margin-left: 22px; padding-left: 10px; border-left: 3px solid #fbe9c8; }
+.drow.empty-fu { opacity: .6; padding-bottom: 6px; }
+.dq { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.dn { font-family: var(--f-mono); font-size: 12px; color: var(--muted); flex: none; min-width: 3.4em; }
+.dt { flex: 1; min-width: 0; font-weight: 600; }
+.drow.dfu .dt { font-weight: 500; color: var(--muted); }
+.dc { flex: none; font-size: 12px; color: var(--muted); }
+circle.dd { cursor: pointer; }
+circle.dd:hover { stroke: var(--ink); stroke-width: 2; }
+.linkbtn { font: inherit; font-size: 13px; color: var(--muted); background: none; border: 0; padding: 6px 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* ---------- 휴대폰 ---------- */
+@media (max-width: 520px) {
+  body { font-size: 15px; padding-block: 18px 0; }
+  .wrap { gap: 20px; }
+  header.top { gap: 6px; }
+  .brand { font-size: 11px; }
+  h1 { font-size: 27px; }
+  .lede { font-size: 16px; line-height: 1.55; }
+  .rail { gap: 4px; }
+  .rail .lbl { font-size: 11px; }
+
+  .sec-head { gap: 10px; }
+  .sec-head svg { width: 34px; height: 34px; }
+  .sec-head h2 { font-size: 22px; }
+  .sec-head p { font-size: 13px; }
+
+  .qlist { border-radius: 12px; }
+  .q { padding: 18px 16px 20px; gap: 12px; }
+  .q .text { font-size: 16px; line-height: 1.5; }
+
+  .fu { margin-left: 0; padding: 14px 0 2px 12px; gap: 10px; }
+
+  /* 막대: 손가락으로 잡기 쉽게 크게 */
+  .spec input[type=range] { height: 36px; }
+  .spec input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
+  .spec input[type=range]::-moz-range-track { height: 8px; border-radius: 4px; }
+  .spec input[type=range]::-webkit-slider-thumb { width: 34px; height: 34px; margin-top: -13px; }
+  .qlist.focusable { gap: 8px; }
+  .qlist.focusable > .q { border-radius: 12px; }
+  .spec input[type=range]::-moz-range-thumb { width: 24px; height: 24px; }
+  .spec .now { font-size: 18px; }
+  /* 눈금은 양 끝과 가운데만, 지금 단계는 막대 위 글자가 알려 줌 */
+  .ticks { grid-template-columns: 1fr auto 1fr; font-size: 12px; }
+  .ticks .t1, .ticks .t3 { display: none; }
+  .ticks .t0, .ticks .t4 { font-size: 13px; }
+
+  /* 선택지: 한 줄에 하나씩, 왼쪽에 색 표시 */
+  .choices.five, .choices.three { grid-template-columns: 1fr; gap: 6px; }
+  .choices.five button, .choices.three button { min-height: 46px; padding: 10px 14px 10px 40px; text-align: left; font-size: 15px; position: relative; }
+  .choices button::before { content: ""; position: absolute; left: 14px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; border: 2px solid currentColor; }
+  .choices button[aria-pressed="true"]::before { background: currentColor; }
+  .choices.three.has-skip { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .choices.three.has-skip button { padding: 10px 2px; text-align: center; font-size: 13px; min-height: 54px; }
+  .choices.three.has-skip button::before { display: none; }
+
+  .field input[type=text] { font-size: 18px; padding: 12px; }
+
+  /* 아래쪽에 붙는 이전/다음 버튼 */
+  .nav {
+    position: sticky; bottom: 0; z-index: 5;
+    margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+    padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    background: var(--bg); border-top: 1px solid var(--rule);
+  }
+  .nav .btn { flex: 1; padding: 14px 12px; }
+  .nav .btn.primary { flex: 2; }
+  .btn { padding: 12px 18px; }
+  .done { padding: 26px 18px; }
+  .done h2 { font-size: 24px; }
+  .admin .bar .btn { flex: 1 1 auto; }
+}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">N UNIT · SURVEY</div>
+    <h1>나의 N unit은 어떤 모양일까?</h1>
+  </header>
+
+  <nav class="rail" id="rail" aria-label="진행 단계"></nav>
+
+  <main id="stage"></main>
+
+  <div class="nav" id="nav">
+    <button class="btn" id="prev" type="button">이전</button>
+    <button class="btn primary" id="next" type="button">다음</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ▼▼▼ Firebase 콘솔 → 프로젝트 설정 → 내 앱(웹)에서 복사한 값으로 바꿔 넣으세요 ▼▼▼
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAkNRJvDhze8bqILykW8MDg7j9XLdeL-ug",
+  authDomain: "nunit-survey.firebaseapp.com",
+  projectId: "nunit-survey",
+  storageBucket: "nunit-survey.firebasestorage.app",
+  messagingSenderId: "888841241245",
+  appId: "1:888841241245:web:a6a6c1ccc8f0c8c98f0a74"
+};
+// ▲▲▲ 여기까지 ▲▲▲
+
+// 관리자 아이디 뒤에 자동으로 붙는 주소 (Firebase에 사용자를 만들 때 "아이디@이 주소"로 만들어요)
+const ADMIN_ID_DOMAIN = "nunit-team.com";
+const ETIQ = ["한 번도 없다", "거의 없다", "가끔 있다", "종종 있다", "자주 있다"];
+const SECTIONS = [
+    { key: "self", name: "개인", color: "--c-self", shape: "dot",
+    qs: [
+      { id: "s_str1", item: "강도", type: "spec", text: "자신감이 있는 사람인가?",
+        fu: { type: "spec", text: "기대와 다른 결과가 나와도 주눅 들지 않는 편인가?" } },
+      { id: "s_str2", item: "강도", type: "spec", text: "예전의 나와 지금의 내가 같다고 느끼는가?",
+        fu: { type: "spec", text: "미래의 나는 지금과 비슷할 것 같은가?" } },
+      { id: "s_dur", item: "지속성", type: "duration", text: "스스로 정한 루틴을 얼마나 오래 유지해왔는가?", hint: "예: 자기 전 스트레칭, 일하기 전 음료 준비, 아침 운동",
+        fu: { type: "spec", ticks: ["전혀 지키지 못했다 (다짐을 세우지 않은 경우 포함)", "거의 지키지 못했다", "보통이다", "어느 정도 지켜왔다", "지금까지 꾸준히 지켜왔다"], text: "2026년 새해 다짐을 얼마나 지켜왔는가?" } },
+      { id: "s_acc", item: "수용 태도", type: "spec", text: "'내가 생각했던 나'와 다른 모습을 발견해도 크게 신경 쓰지 않는 편인가?",
+        fu: { type: "spec", text: "나를 꼭 이런 사람이라고 정해두지 않는 편인가?" } },
+      { id: "s_vis", item: "가시성", type: "spec", text: "다른 사람들에게는 이 습관이 없을 것이라고 생각하는가?",
+        fu: { type: "money", text: "최소 얼마를 받으면 이 습관을 공개해도 괜찮은가?" } },
+    ] },
+  { key: "other", name: "개인과 타인", color: "--c-other", shape: "line",
+    qs: [
+      { id: "o_str", item: "강도", type: "spec", ticks: ["지금과 같을 것이다", "조금 달라졌을 것이다", "보통이다", "많이 달라졌을 것이다", "매우 많이 달라졌을 것이다"], text: "그 사람을 만나지 않았다면 지금의 나는 얼마나 달라졌을 것 같은가?",
+        fu: { type: "spec", ticks: ["매우 오래되었다", "오래되었다", "보통이다", "오래되지 않았다", "얼마 되지 않았다"], text: "그 사람을 알게 된 지 얼마나 되었는가?" } },
+      { id: "o_dur1", item: "지속성", type: "three", opts: ["일주일에 한 번보다 적게 한다", "일주일에 한두 번 한다", "일주일에 세 번 이상 한다"], text: "가족에게 얼마나 자주 전화하는가?",
+        fu: { type: "three", opts: ["3분 미만", "3분 이상 ~ 30분 미만", "30분 이상"], text: "가족과 한 번 전화하면 보통 몇 분 동안 통화하는가?" } },
+      { id: "o_dur2", item: "지속성", type: "three", opts: ["5년 미만", "5년 이상 ~ 10년 미만", "10년 이상"], text: "지금 가장 친한 친구와 알고 지낸 지 얼마나 되었는가?",
+        fu: { type: "three", opts: ["일주일 미만", "일주일 이상 ~ 한 달 미만", "한 달 이상"], text: "지금 가장 친한 친구와 연락하지 않고 지낸 가장 긴 기간은 얼마인가?" } },
+      { id: "o_dur3", item: "지속성", type: "three", skip: "연애 경험 없음", text: "연애하면서 배운 대화나 행동 방식을 다른 사람과 지낼 때도 사용하는가?",
+        fu: { type: "three", opts: ["없다", "잘 모르겠다", "있다"], text: "예전에 누군가와 지내며 배운 대화나 행동 방식 중 지금은 바꾸고 싶은 것이 있는가?" } },
+      { id: "o_acc", item: "수용 태도", type: "spec", text: "다른 사람과 의견이 달라도 크게 신경 쓰지 않는 편인가?",
+        fu: { type: "spec", text: "내가 틀렸다는 말을 들으면 바로 인정할 수 있는가?" } },
+      { id: "o_vis1", item: "가시성", type: "spec", ticks: ["절대 말할 수 없다", "말하기 어렵다", "보통이다", "말할 수 있다", "당당하게 말할 수 있다"], text: "다른 사람에게 이 취향을 당당하게 말할 수 있는가?",
+        fu: { type: "people", text: "최대 몇 명에게 이 취향을 공개해도 괜찮은가?" } },
+      { id: "o_vis2", item: "가시성", type: "spec", ticks: ["전혀 듣지 않는다", "거의 듣지 않는다", "가끔 듣는다", "자주 듣는다", "매우 자주 듣는다"], text: "가족에게 잔소리를 자주 듣는가?",
+        fu: { type: "spec", text: "가족 외의 사람에게 나의 습관에 대한 지적을 자주 듣는 편인가?" } },
+    ] },
+  { key: "env", name: "개인과 환경", color: "--c-env", shape: "plane",
+    qs: [
+      { id: "e_str1", item: "강도", type: "five", text: "'집 안에서의 나'와 '집 밖에서의 나'는 많이 다른가?",
+        fu: { type: "five", text: "장소에 따라 달라지는 나의 모습이 다른 사람처럼 느껴지는가?" } },
+      { id: "e_str2", item: "강도", type: "five", text: "인터넷 광고에서 보거나 SNS에서 화제가 되는 상품을 자주 구매하는가?",
+        fu: { type: "five", text: "인터넷에서 본 글이나 영상이 나의 생각을 바꾸기도 하는가?" } },
+      { id: "e_str3", item: "강도", type: "five", text: "내키지 않아도 주변 분위기에 따라 행동하는 편인가?",
+        fu: { type: "five", text: "주변 사람들의 말을 듣다 보면 나도 그렇게 생각하게 되는가?" } },
+      { id: "e_dur", item: "지속성", type: "spec", text: "유행이 끝난 뒤에도 계속 좋아하고 즐기는 편인가?", hint: "예: 어쩔티비 / 탕후루",
+        fu: { type: "spec", ticks: ["매우 짧게 즐긴다", "짧게 즐긴다", "보통이다", "오래 즐긴다", "매우 오래 즐긴다"], text: "얼마나 오랫동안 즐기는가?" } },
+      { id: "e_acc", item: "수용 태도", type: "spec", text: "환경이 급격하게 바뀌었을 때 잘 적응하는 편인가?",
+        fu: { type: "spec", text: "적응하는 과정에서 스트레스를 받지 않는 편인가?" } },
+      { id: "e_vis1", item: "가시성", type: "five", opts: ETIQ, text: "에티켓을 지키는 것이 귀찮게 느껴질 때가 있는가?",
+        fu: { type: "five", opts: ETIQ, text: "실제로 에티켓을 지키지 않을 때가 있는가?" } },
+      { id: "e_vis2", item: "가시성", type: "five", text: "편법을 써도 좋은 결과가 나오면 괜찮다고 생각하는가?",
+        fu: { type: "five", text: "아는 사람이 편법을 쓴 것을 알게 되어도 숨겨줄 수 있는가?" } },
+      { id: "e_vis3", item: "가시성", type: "five", text: "남들의 시선 때문에 하지 않게 된 행동이 많은 편인가?",
+        fu: { type: "five", text: "친한 사람들 앞에서도 내 행동이 어떻게 보일지 신경 쓰는 편인가?" } },
+    ] },
+];
+const FIVE = ["매우 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"];
+const THREE = ["그렇지 않다", "보통이다", "그렇다"];
+
+// 설문 페이지 순서: 가벼운 질문 → 주관식과 짝 질문 → 깊고 무거운 질문
+// "open:..." 은 초성으로 적는 주관식 질문
+const OPENQ = {
+  taste: { text: "자신의 특이한 취향을 적어주세요.", hint: "예: 아무도 좋아하지 않는 이상형, 괴식, 성적 취향", ph: "예: ㅁㅊㅊㅋ" },
+  habit: { text: "자신의 습관을 적어주세요.", hint: "예: 손톱 뜯기, 다리 떨기, 코딱지 파기", ph: "예: ㅅㅌㄸㄱ" },
+  person: { text: "현재 나에게 가장 큰 영향을 주는 사람을 적어주세요.", ph: "예: ㅇㅁ" }
+};
+const PAGES = [
+  { key: "intro", label: "안내", sub: "준비 중..." },
+  { key: "p1", label: "1", sub: "조각을 꺼내고 있어요", lead: "가볍게 시작해볼까요? 정답은 없으니 현재의 나에게 가까운 쪽을 골라주세요.", ids: ["s_str1", "e_str2", "e_dur", "s_dur", "e_str1", "o_dur2", "o_dur1", "o_vis2"] },
+  { key: "p2", label: "2", sub: "조각을 살펴보고 있어요", lead: "나의 모습을 조금 더 꺼내볼게요. 주관식에는 초성만 입력할 수 있으며, 입력한 초성은 제작팀 화면에서도 순서가 무작위로 섞여 표시돼요. 부담 없이 응답해주세요.", ids: ["open:taste", "o_vis1", "open:habit", "s_vis", "open:person", "o_str"] },
+  { key: "p3", label: "3", sub: "조각을 조립하고 있어요", lead: "나를 더 깊이 들여다볼까요? 천천히 스스로를 돌아보며 답해주세요.", ids: ["s_str2", "e_str3", "o_dur3", "o_acc", "e_acc", "s_acc", "e_vis3", "e_vis1", "e_vis2"] }
+];
+let step = 0;
+let A = {};      // answers: id -> {score, label} ; follow-ups use id + "__fu"
+let OPEN = { nick: "", habit: "", taste: "", person: "" };
+let AGREE = false;
+
+function shapeSVG(shape, color, size = 44) {
+  const c = `var(${color})`;
+  if (shape === "dot") return `<svg viewBox="0 0 44 44" width="${size}" height="${size}" aria-hidden="true"><circle cx="22" cy="22" r="12" fill="${c}"/></svg>`;
+  if (shape === "line") return `<svg viewBox="0 0 44 44" width="${size}" height="${size}" aria-hidden="true"><path d="M8 34 C 16 10, 28 34, 36 10" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"/></svg>`;
+  return `<svg viewBox="0 0 44 44" width="${size}" height="${size}" aria-hidden="true"><rect x="7" y="9" width="30" height="26" rx="7" fill="${c}"/><circle cx="22" cy="22" r="4" fill="var(--paper)"/></svg>`;
+}
+
+function isExtreme(type, a) {
+  if (!a) return false;
+  if (type === "spec" || type === "duration") return a.score <= 30 || a.score >= 70;
+  if (type === "five") return a.idx === 0 || a.idx === 4;
+  if (type === "three") return a.idx === 0 || a.idx === 2;
+  return false;
+}
+
+function renderRail() {
+  const labels = PAGES.map(p => p.sub).concat("나만의 N unit이 완성되었어요");
+  const rail = document.getElementById("rail");
+  // 막대는 한 번만 만들고 클래스만 바꿔야 색이 차오르는 애니메이션이 보여요
+  if (rail.children.length !== labels.length) {
+    rail.innerHTML = labels.map(t => `<div class="seg" style="--seg: var(--ink)"><div class="bar"></div><div class="lbl">${t}</div></div>`).join("");
+  }
+  [...rail.children].forEach((el, i) => {
+    el.classList.toggle("past", i < step);
+    el.classList.toggle("on", i === step);
+    el.querySelector(".lbl").setAttribute("aria-hidden", i === step ? "false" : "true");
+  });
+}
+
+function controlHTML(id, type) {
+  const a = A[id];
+  const qq = cfg(id);
+  if (type === "spec") {
+    const ticks = qq.ticks || FIVE;
+    const v = a ? a.score : 50;
+    return `<div class="spec ${a ? "" : "untouched"}">
+      <input type="range" id="in_${id}" min="0" max="100" step="1" value="${v}" data-id="${id}" aria-label="${ticks[0]}에서 ${ticks[4]} 사이">
+      <div class="ticks" aria-hidden="true">${ticks.map((t, i) => `<span class="t${i}">${t}</span>`).join("")}</div>
+    </div>`;
+  }
+  if (type === "five" || type === "three") {
+    const opts = qq.opts || (type === "five" ? FIVE : THREE);
+    const n = opts.length;
+    const side = i => i < (n - 1) / 2 ? "no" : i > (n - 1) / 2 ? "yes" : "mid";
+    return `<div class="choices ${type}${qq.skip ? " has-skip" : ""}" role="group">${opts.map((o, i) =>
+      `<button type="button" id="in_${id}_${i}" data-id="${id}" data-type="${type}" data-idx="${i}" data-side="${side(i)}" data-edge="${i === 0 || i === n - 1 ? 1 : 0}" aria-pressed="${a && a.idx === i}">${o}</button>`).join("")}${qq.skip ? `<button type="button" class="skip" id="in_${id}_skip" data-id="${id}" data-type="${type}" data-idx="skip" data-side="none" aria-pressed="${!!(a && a.skip)}">${qq.skip}</button>` : ""}</div>`;
+  }
+  if (type === "duration") {
+    const v = a ? a.score : 50;
+    return `<div class="spec ${a ? "" : "untouched"}">
+      <input type="range" id="in_${id}" min="0" max="100" step="1" value="${v}" data-id="${id}" data-dur="1" aria-label="유지된 기간">
+      <div class="ends"><span>0시간 (루틴 없음 포함)</span><span class="money-out" id="out_${id}">${a ? fmtDur(v) : "–"}</span><span>1년 이상</span></div>
+    </div>`;
+  }
+  if (type === "money") {
+    const v = a ? a.value : 100;
+    return `<div class="spec ${a ? "" : "untouched"}">
+      <input type="range" id="in_${id}" min="10" max="1000" step="10" value="${v}" data-id="${id}" data-money="1" aria-label="금액">
+      <div class="ends"><span>10만 원 이하</span><span class="money-out" id="out_${id}">${a ? fmtMoney(v) : "–"}</span><span>1000만 원 이상</span></div>
+    </div>`;
+  }
+  if (type === "people") {
+    const v = a ? a.value : 50;
+    return `<div class="spec ${a ? "" : "untouched"}">
+      <input type="range" id="in_${id}" min="0" max="100" step="1" value="${v}" data-id="${id}" data-ppl="1" aria-label="사람 수">
+      <div class="ends"><span>0명</span><span class="money-out" id="out_${id}">${a ? (v >= 100 ? "100명 이상" : v + "명") : "–"}</span><span>100명 이상</span></div>
+    </div>`;
+  }
+}
+const CHO = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+const CHO_SET = new Set(CHO);
+// 완성형 글자는 초성으로 바꾸고, 초성·띄어쓰기 외의 글자는 지운다
+function toChosung(s) {
+  let out = "";
+  for (const ch of s) {
+    const c = ch.charCodeAt(0);
+    if (c >= 0xAC00 && c <= 0xD7A3) out += CHO[Math.floor((c - 0xAC00) / 588)];
+    else if (CHO_SET.has(ch)) out += ch;
+    else if (ch === " " && !out.endsWith(" ")) out += " ";
+  }
+  return out.replace(/^ +/, "");
+}
+function bindChosung(el, key) {
+  let composing = false;
+  const apply = () => {
+    const v = toChosung(el.value);
+    if (v !== el.value) el.value = v;
+    OPEN[key] = v;
+    el.closest(".q")?.classList.remove("missing");
+    refreshMarks();
+  };
+  el.addEventListener("compositionstart", () => { composing = true; });
+  el.addEventListener("compositionend", () => { composing = false; apply(); });
+  el.addEventListener("input", e => { if (composing || e.isComposing) { OPEN[key] = toChosung(el.value); return; } apply(); });
+  el.addEventListener("blur", () => setTimeout(apply, 0));
+  el.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); el.blur(); } });
+}
+function fmtDur(v) {
+  if (v <= 0) return "0시간 (루틴 없음 포함)";
+  if (v >= 100) return "1년 이상";
+  const h = Math.exp(Math.log(8760) * v / 100);
+  if (h < 24) return `${Math.max(1, Math.round(h))}시간`;
+  const d = h / 24;
+  if (d < 7) return `${Math.round(d)}일`;
+  if (d < 30) return `${Math.round(d / 7)}주`;
+  const m = Math.round(d / 30.4);
+  return m >= 12 ? "1년 이상" : `${m}개월`;
+}
+function fmtMoney(v) { return v >= 1000 ? "1000만 원 이상" : v <= 10 ? "10만 원 이하" : `${v}만 원`; }
+
+function qBlock(id, i, n) {
+  // 주관식 뒤에 이어지는 질문은 번호를 따로 매기지 않음
+  const pgIds = (PAGES[step] && PAGES[step].ids) || [];
+  const isPaired = x => { const j = pgIds.indexOf(x); return j > 0 && pgIds[j - 1].startsWith("open:"); };
+  const main = pgIds.filter(x => !isPaired(x)), mi = main.indexOf(id);
+  const num = isPaired(id) ? `<div class="num">이어지는 질문</div>`
+    : `<div class="num">${String(mi + 1).padStart(2, "0")} / ${String(main.length).padStart(2, "0")}</div>`;
+  if (id.startsWith("open:")) {
+    const k = id.slice(5), o = OPENQ[k];
+    return `<div class="q write" id="q_${k}">${num}
+      <div class="field">
+        <label class="text" for="${k}">${o.text}</label>${o.hint ? `<p class="qhint">${o.hint}</p>` : ""}
+        <input type="text" id="${k}" maxlength="20" autocomplete="off" placeholder="${o.ph}" value="${esc(OPEN[k])}">
+        <small>초성만 입력돼요. 제출하면 초성 순서가 무작위로 섞여서 저장되기 때문에, 제작진이 볼 때는 원래 무슨 말인지 알 수 없어요. 편하게 적어 주세요.</small>
+      </div></div>`;
+  }
+  const q = findQ(id), open = isExtreme(q.type, A[q.id]);
+  const pg = PAGES[step], prev = pg && pg.ids ? pg.ids[pg.ids.indexOf(id) - 1] : null;
+  const gate = prev && prev.startsWith("open:") ? prev.slice(5) : "";
+  return `<div class="q${gate ? " paired" : ""}" id="q_${q.id}"${gate ? ` data-gate="${gate}"${OPEN[gate].trim() ? "" : " hidden"}` : ""}>${num}
+    <p class="text">${q.text}</p>${q.hint ? `<p class="qhint">${q.hint}</p>` : ""}
+    ${controlHTML(q.id, q.type)}
+    ${open ? `<div class="fu" id="q_${q.id}__fu"><div class="tag">질문 하나 더</div><p class="text">${q.fu.text}</p>${controlHTML(q.id + "__fu", q.fu.type)}</div>` : ""}
+  </div>`;
+}
+
+function renderStage() {
+  const stage = document.getElementById("stage");
+  const nav = document.getElementById("nav");
+  renderRail();
+  if (step >= PAGES.length) return; // done screen handled separately
+  nav.hidden = false;
+  document.getElementById("prev").style.visibility = step === 0 ? "hidden" : "visible";
+  document.getElementById("next").textContent = step === 0 ? "설문 시작하기" : step === PAGES.length - 1 ? "제출하기" : "다음";
+  document.documentElement.style.setProperty("--accent", "var(--ink)");
+  const pg = PAGES[step];
+
+  if (pg.key === "intro") {
+    stage.innerHTML = `
+      <div class="intro">
+        <section class="about">
+          <p>우리는 살아가며 수많은 것들의 영향을 받습니다.</p>
+          <p>오랜 시간 몸에 밴 습관과 취향, 타인과의 만남과 관계, 그리고 내 주위의 환경까지. 나를 둘러싼 것들은 저마다 다른 방식으로 영향을 미치며 지금의 나를 만들어 왔습니다.</p>
+          <p>그렇다면 지금의 나를 이루는 조각들은 어떤 모습으로 모여 있을까요?</p>
+          <p><b>N unit</b>은 한 사람에게 미친 다양한 영향들을 유닛(Unit)으로 표현하는 프로젝트입니다. ‘나’를 작은 유닛으로 해체하고 재조립하는 과정을 통해 나는 어떤 모습으로 나타나는지 알아봅니다.</p>
+          <p>설문을 통해 나만의 N unit을 만나보고 새로운 나의 모습을 살펴보세요!</p>
+        </section>
+        <section class="about privacy">
+          <p>설문은 약 5분~10분 소요됩니다. 객관식, 스펙트럼형, 주관식 문항으로 구성되어 있으며, 주관식에는 초성만 입력할 수 있습니다. 입력한 초성은 제작팀 화면에서도 순서가 무작위로 섞여 표시되니 편하게 적어주세요.</p>
+          <p>설문 참여는 자유롭게 선택할 수 있으며, 응답 도중에도 언제든 그만둘 수 있습니다.</p>
+          <p>응답 결과는 N unit 제작 목적으로만 사용됩니다. 응답 내용은 제작팀만 확인할 수 있으며, 입력한 개별 응답은 외부에 공개되지 않습니다. 수집된 응답은 2026년 12월까지 보관한 뒤 모두 폐기합니다.</p>
+          <label class="agree" id="q_agree"><input type="checkbox" id="agree" ${AGREE ? "checked" : ""}> 위 내용을 확인했으며, 설문 참여 및 응답을 바탕으로 한 N unit 제작에 동의합니다.</label>
+        </section>
+        <div class="qlist">
+          <div class="q write" id="q_nick">
+            <div class="field">
+              <label class="text" for="nick">설문과 N unit 제작에 사용될 이름을 적어주세요. 실명이 아닌 별명 사용을 권장드립니다.</label>
+              <input type="text" id="nick" maxlength="20" autocomplete="off" placeholder="예: 하이루" value="${esc(OPEN.nick)}" style="letter-spacing:0;font-size:18px">
+            </div>
+          </div>
+        </div>
+      </div>`;
+    stage.insertAdjacentHTML("beforeend", `<p style="margin:18px 0 0"><button class="linkbtn" id="open-admin" type="button">제작팀 · 응답 모아 보기</button></p>`);
+    document.getElementById("open-admin").addEventListener("click", () => { renderAdmin(); window.scrollTo(0, 0); });
+    stage.querySelector("#nick").addEventListener("input", e => { OPEN.nick = e.target.value; e.target.closest(".q").classList.remove("missing"); });
+    stage.querySelector("#agree").addEventListener("change", e => { AGREE = e.target.checked; document.getElementById("q_agree").classList.remove("missing"); });
+    return;
+  }
+
+  stage.innerHTML = `
+    <section style="display:flex;flex-direction:column;gap:18px">
+      <div class="page-head">${pg.label} / ${PAGES.length - 1}</div>
+      <p class="lead">${pg.lead}</p>
+      <div class="qlist focusable">${pg.ids.map((id, i) => qBlock(id, i, pg.ids.length)).join("")}</div>
+      <div class="end-space" aria-hidden="true"></div>
+    </section>`;
+  FOCUSED = null; lockUntil = 0;
+  refreshMarks();
+  requestAnimationFrame(() => { const first = pg.ids.find(x => !isDone(x)) || pg.ids[0]; setFocus(qEl(first)); });
+  pg.ids.filter(id => id.startsWith("open:")).forEach(id => { const k = id.slice(5); bindChosung(stage.querySelector("#" + k), k); });
+}
+
+function esc(t) { return String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+function band(v) { return Math.min(4, Math.floor(v / 20)); }
+function cfg(id) { const q = findQ(id); return id.endsWith("__fu") ? q.fu : q; }
+function findQ(id) {
+  const base = id.replace(/__fu$/, "");
+  for (const s of SECTIONS) for (const q of (s.qs || [])) if (q.id === base) return q;
+}
+
+function refreshQuestion(baseId) {
+  const pg = PAGES[step], q = findQ(baseId), i = pg.ids.indexOf(baseId);
+  const el = document.getElementById("q_" + baseId);
+  const wasOpen = !!document.getElementById("q_" + baseId + "__fu");
+  const open = isExtreme(q.type, A[q.id]);
+  if (!open) delete A[q.id + "__fu"];
+  if (wasOpen === open) return false;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = qBlock(baseId, i, pg.ids.length);
+  const nu = tmp.firstElementChild;
+  if (el.classList.contains("focus")) nu.classList.add("focus");
+  el.replaceWith(nu);
+  if (FOCUSED === el) FOCUSED = nu;
+  return true;
+}
+
+// interactions (delegated)
+const stageEl = document.getElementById("stage");
+function onRange(e) {
+  const t = e.target;
+  if (t.type !== "range") return;
+  const id = t.dataset.id;
+  const v = Number(t.value);
+  if (t.dataset.dur) {
+    A[id] = { score: v, label: fmtDur(v) };
+    const out = document.getElementById("out_" + id); if (out) out.textContent = fmtDur(v);
+  } else if (t.dataset.money) {
+    A[id] = { value: v, label: fmtMoney(v) };
+    const out = document.getElementById("out_" + id); if (out) out.textContent = fmtMoney(v);
+  } else if (t.dataset.ppl) {
+    A[id] = { value: v, score: v, label: v >= 100 ? "100명 이상" : v + "명" };
+    const out = document.getElementById("out_" + id); if (out) out.textContent = v >= 100 ? "100명 이상" : v + "명";
+  } else {
+    const ticks = cfg(id).ticks || FIVE;
+    A[id] = { score: v, label: ticks[band(v)] };
+  }
+  t.closest(".spec").classList.remove("untouched");
+  const hint = t.closest(".spec").querySelector(".hint"); if (hint) hint.remove();
+  t.closest(".q")?.classList.remove("missing");
+  if (!id.endsWith("__fu") && e.type === "change") {
+    const focusId = t.id;
+    if (refreshQuestion(id)) document.getElementById(focusId)?.focus({ preventScroll: true });
+  }
+  refreshMarks();
+}
+stageEl.addEventListener("input", e => {
+  if (e.target.type === "range") onRange(e);
+});
+stageEl.addEventListener("change", e => { if (e.target.type === "range") onRange(e); });
+// 손잡이를 누르기만 하고 움직이지 않았을 때(보통이다를 고르려는 경우)도 답으로 인정
+let rangeDown = null;
+stageEl.addEventListener("pointerdown", e => { if (e.target.type === "range") rangeDown = { el: e.target, x: e.clientX, y: e.clientY }; });
+stageEl.addEventListener("pointerup", e => {
+  const d = rangeDown; rangeDown = null;
+  if (!d || e.target !== d.el || A[d.el.dataset.id]) return;
+  if (Math.abs(e.clientY - d.y) > 8) return;           // 세로로 밀었으면 스크롤이지 답이 아님
+  onRange({ target: d.el, type: "change" });
+});
+stageEl.addEventListener("click", e => {
+  const b = e.target.closest("button[data-idx]");
+  if (!b) return;
+  const id = b.dataset.id, type = b.dataset.type;
+  if (b.dataset.idx === "skip") {
+    A[id] = { idx: -1, score: null, label: b.textContent, skip: true };
+  } else {
+    const idx = Number(b.dataset.idx);
+    const score = type === "five" ? idx * 25 : idx * 50;
+    A[id] = { idx, score, label: b.textContent };
+  }
+  b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  b.closest(".q")?.classList.remove("missing");
+  const baseId = id.replace(/__fu$/, "");
+  if (!id.endsWith("__fu")) { if (refreshQuestion(id)) document.getElementById(b.id)?.focus({ preventScroll: true }); }
+  refreshMarks();
+});
+
+// ---------- 지금 답하는 질문만 또렷하게 ----------
+function isDone(id) {
+  if (id.startsWith("open:")) return !!OPEN[id.slice(5)].trim();
+  const q = findQ(id); if (!q) return false;
+  const a = A[q.id]; if (!a) return false;
+  return !isExtreme(q.type, a) || !!A[q.id + "__fu"];
+}
+function qEl(id) { return document.getElementById("q_" + (id.startsWith("open:") ? id.slice(5) : id)); }
+function refreshMarks() {
+  const pg = PAGES[step]; if (!pg || !pg.ids) return;
+  // 주관식에 답하면 짝이 되는 질문이 나타남
+  document.querySelectorAll("#stage .q[data-gate]").forEach(el => {
+    const show = !!OPEN[el.dataset.gate].trim(), typing = document.activeElement && document.activeElement.id === el.dataset.gate;
+    if (show && el.hidden && !typing) { el.hidden = false; el.classList.add("reveal"); }
+    else if (!show && !el.hidden) { el.hidden = true; }
+  });
+  let ok = true;   // 앞 질문(열린 추가 질문 포함)을 모두 답해야 다음 질문이 열림
+  pg.ids.forEach(id => { const el = qEl(id); if (!el) return;
+    const done = isDone(id);
+    el.classList.toggle("answered", done);
+    el.classList.toggle("locked", !ok);
+    if (!ok) el.setAttribute("inert", ""); else el.removeAttribute("inert");
+    ok = ok && done; });
+}
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function navH() { const n = document.getElementById("nav"); return n && getComputedStyle(n).position === "sticky" ? n.offsetHeight : 0; }
+let FOCUSED = null, lockUntil = 0;
+function setFocus(el) {
+  const list = document.querySelector("#stage .qlist.focusable"); if (!list) return;
+  list.querySelectorAll(":scope > .q").forEach(q => q.classList.toggle("focus", q === el));
+  FOCUSED = el; lockUntil = Date.now() + 350; clearTimeout(pickByScroll.t);
+}
+function pickByScroll() {
+  if (Date.now() < lockUntil) { clearTimeout(pickByScroll.t); pickByScroll.t = setTimeout(pickByScroll, lockUntil - Date.now() + 30); return; }
+  const list = document.querySelector("#stage .qlist.focusable"); if (!list) return;
+  const mid = (innerHeight - navH()) / 2; let best = null, bd = 1e9;
+  let dCur = 1e9;
+  list.querySelectorAll(":scope > .q:not([hidden])").forEach(q => { const r = q.getBoundingClientRect(), d = Math.abs(r.top + r.height / 2 - mid); if (q === FOCUSED) dCur = d; if (d < bd) { bd = d; best = q; } });
+  // 지금 질문보다 확실히 더 가운데에 가까울 때만 바꿔요 (떨림 방지)
+  if (best && best !== FOCUSED && bd < dCur - 40) setFocus(best), lockUntil = 0;
+}
+let scrollRaf = 0;
+addEventListener("scroll", () => { if (!scrollRaf) scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; pickByScroll(); }); }, { passive: true });
+addEventListener("resize", () => { const a = document.activeElement; if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA") && a.type !== "range") return; pickByScroll(); });
+// 흐린 질문을 누르면 그 질문이 가운데로 오며 또렷해짐
+stageEl.addEventListener("pointerdown", e => {
+  const q = e.target.closest("#stage .qlist.focusable > .q"); if (!q || q === FOCUSED) return;
+  setFocus(q);
+}, true);
+stageEl.addEventListener("focusin", e => {
+  const q = e.target.closest("#stage .qlist.focusable > .q"); if (q && q !== FOCUSED) setFocus(q);
+});
+
+function validate() {
+  const pg = PAGES[step];
+  let first = null;
+  const mark = (el, bad) => { el.classList.toggle("missing", bad); if (bad && !first) first = el; };
+  if (pg.key === "intro") {
+    mark(document.getElementById("q_agree"), !AGREE);
+    mark(document.getElementById("q_nick"), !OPEN.nick.trim());
+  } else {
+    for (const id of pg.ids) {
+      if (id.startsWith("open:")) { const k = id.slice(5); mark(document.getElementById("q_" + k), !OPEN[k].trim()); continue; }
+      const q = findQ(id), el = document.getElementById("q_" + q.id);
+      if (el.hidden) continue;
+      mark(el, !A[q.id] || (isExtreme(q.type, A[q.id]) && !A[q.id + "__fu"]));
+    }
+  }
+  if (first) { if (first.closest(".qlist.focusable")) setFocus(first); first.scrollIntoView({ behavior: REDUCE ? "auto" : "smooth", block: "center" }); }
+  return !first;
+}
+
+document.getElementById("prev").addEventListener("click", () => { if (step > 0) { step--; renderStage(); window.scrollTo(0, 0); } });
+document.getElementById("next").addEventListener("click", async () => {
+  if (!validate()) return;
+  if (step < PAGES.length - 1) { step++; renderStage(); window.scrollTo(0, 0); return; }
+  await submit();
+});
+
+function buildRows() {
+  const rows = [];
+  for (const s of SECTIONS) for (const q of (s.qs || [])) {
+    const a = A[q.id];
+    rows.push({ section: s.name, item: q.item, id: q.id, question: q.text, followup: false, answer: a.label, score: a.score });
+    const f = A[q.id + "__fu"];
+    if (f) rows.push({ section: s.name, item: q.item, id: q.id + "__fu", question: q.fu.text, followup: true,
+      answer: f.label, score: f.score ?? null, value: f.value ?? null });
+  }
+  return rows;
+}
+
+
+// ---------- Firebase ----------
+// Firebase가 막힌 환경(클로드 미리보기 등)에서는 테스트 모드로 화면만 보여줘요
+let fdb = null, fauth = null, FB_OK = false;
+try {
+  if (typeof firebase !== "undefined") {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fdb = firebase.firestore();
+    fauth = firebase.auth();
+    FB_OK = true;
+  }
+} catch (e) { console.warn("Firebase 사용 불가 → 테스트 모드", e); }
+
+// 초성 순서를 무작위로 섞음 (띄어쓰기 자리는 그대로)
+function shuffleCho(t) {
+  const s = String(t).trim(), letters = [...s].filter(c => c !== " ");
+  for (let i = letters.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [letters[i], letters[j]] = [letters[j], letters[i]]; }
+  let k = 0; return [...s].map(c => c === " " ? " " : letters[k++]).join("");
+}
+async function submit() {
+  const btn = document.getElementById("next");
+  btn.disabled = true; btn.textContent = "저장하는 중";
+  const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const payload = { code, createdAt: new Date().toISOString(), savedAt: FB_OK ? firebase.firestore.FieldValue.serverTimestamp() : null,
+    nickname: OPEN.nick.trim(), open: { taste: shuffleCho(OPEN.taste), habit: shuffleCho(OPEN.habit), person: shuffleCho(OPEN.person) }, rows: buildRows() };
+  try {
+    if (FB_OK) await fdb.collection("responses").doc(code).set(payload);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "다시 제출하기";
+    showStatus("답변을 저장하지 못했어요. 인터넷 연결을 확인하고 다시 제출해 주세요.");
+    return;
+  }
+  btn.disabled = false;
+  step = PAGES.length;
+  renderRail();
+  document.getElementById("nav").hidden = true;
+  document.getElementById("stage").innerHTML = `
+    <div class="done">
+      <div class="shapes">${shapeSVG("dot", "--c-self", 36)}${shapeSVG("line", "--c-other", 36)}${shapeSVG("plane", "--c-env", 36)}</div>
+      <h2>나만의 N unit이 완성되었어요.</h2>
+      <p>모든 답변들이 모여 하나의 유닛이 될 준비를 마쳤어요. 응답한 결과를 N unit으로 변환할게요. 새로운 모습의 ‘나’를 만나러 가요.</p>
+      <button class="btn" id="again" type="button">새로 시작하기</button>
+    </div>`;
+  document.getElementById("again").addEventListener("click", () => {
+    A = {}; OPEN = { nick: "", habit: "", taste: "", person: "" }; AGREE = false; step = 0; renderStage(); window.scrollTo(0, 0);
+  });
+}
+function showStatus(msg) {
+  let el = document.getElementById("submit-status");
+  if (!el) { el = document.createElement("p"); el.id = "submit-status"; el.className = "status bad"; document.getElementById("nav").before(el); }
+  el.textContent = msg;
+}
+
+// ---------- 응답 모아 보기 (제작팀: 구글 로그인) ----------
+let RESP = [];
+function columns() {
+  const cols = [];
+  for (const s of SECTIONS) (s.qs || []).forEach((q, i) => {
+    const name = `${s.name} ${i + 1}번`;
+    cols.push({ id: q.id, head: name, title: q.text, fu: false });
+    cols.push({ id: q.id + "__fu", head: name + " 추가", title: q.fu.text, fu: true });
+  });
+  return cols;
+}
+function cfgType(id) { const q = findQ(id); if (!q) return ""; return id.endsWith("__fu") ? q.fu.type : q.type; }
+function isNumeric(id) { return ["spec", "duration", "money", "people"].includes(cfgType(id)); }
+const ITEMS = ["강도", "지속성", "수용 태도", "가시성"];
+function summaryCols() {
+  const out = [];
+  for (const s of SECTIONS) if (s.qs) for (const it of ITEMS) {
+    const ids = s.qs.filter(q => q.item === it).map(q => q.id);
+    if (ids.length) out.push({ head: `${s.name} · ${it}`, ids });
+  }
+  return out;
+}
+// 기본 질문 점수의 평균 (추가 질문, '연애 경험 없음'은 빼고 계산)
+function summaryValue(m, sc) {
+  const v = sc.ids.map(id => m[id]?.score).filter(x => typeof x === "number");
+  return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+}
+// ---------- 응답자 한 명의 유닛 보기 (평면 도식) ----------
+function scoreOf(m, id) { const x = m[id]; return x && typeof x.score === "number" ? x.score : null; }
+function idxOf(m, id) { const x = m[id]; if (!x) return null; const q = findQ(id); const t = id.endsWith("__fu") ? q.fu : q; const opts = t.opts || (t.type === "five" ? FIVE : THREE); const i = opts.indexOf(x.answer); return i >= 0 ? i : null; }
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const css = name => `var(${name})`;
+
+// 점: 30×30mm 정사각형 → 라운드, 분할축, 구역 당김/누름, 회전축
+function dotParams(m) {
+  return { acc: scoreOf(m, "s_acc"), dur: scoreOf(m, "s_dur"), str1: scoreOf(m, "s_str1"), str2: scoreOf(m, "s_str2"), vis: scoreOf(m, "s_vis") };
+}
+function dotUnits(m) {
+  const base = dotParams(m);
+  const out = [{ label: "기본 점", p: base }];
+  const add = (id, key, title, conv) => { const x = m[id + "__fu"]; if (!x) return; const v = conv ? conv(x) : x.score; if (v == null) return; out.push({ label: title, p: { ...base, [key]: v } }); };
+  add("s_acc", "acc", "추가 점 · 수용 태도");
+  add("s_dur", "dur", "추가 점 · 지속성");
+  add("s_str1", "str1", "추가 점 · 강도 1구역");
+  add("s_str2", "str2", "추가 점 · 강도 2구역");
+  add("s_vis", "vis", "추가 점 · 가시성", x => x.value != null ? clamp((x.value - 10) / 990 * 100, 0, 100) : null);
+  return out;
+}
+function valsTable(sec, m) {
+  const rows = [];
+  for (const q of sec.qs) {
+    const x = m[q.id], f = m[q.id + "__fu"];
+    const num = v => v == null ? "·" : v;
+    rows.push(`<tr><td>${q.item}</td><td class="l">${esc(q.text)}</td><td><span class="n">${num(x?.score ?? x?.value)}</span><span class="s">${esc(x?.answer ?? "")}</span></td></tr>`);
+    if (f) rows.push(`<tr class="furow"><td>↳ 추가</td><td class="l">${esc(q.fu.text)}</td><td><span class="n">${num(f.score ?? f.value)}</span><span class="s">${esc(f.answer ?? "")}</span></td></tr>`);
+  }
+  const avg = ITEMS.map(it => { const sc = summaryCols().find(c => c.head === `${sec.name} · ${it}`); const v = sc ? summaryValue(m, sc) : null; return `<td><span class="avg">${v ?? "·"}</span><span class="s">${it}</span></td>`; }).join("");
+  return `<table class="vals"><thead><tr><th>항목</th><th>질문</th><th>점수 / 답</th></tr></thead><tbody>${rows.join("")}</tbody></table>
+    <table class="vals"><thead><tr><th colspan="4">항목별 평균 (기본 질문)</th></tr></thead><tbody><tr>${avg}</tr></tbody></table>`;
+}
+
+// =====================================================================
+// 유닛 만들기 — 'N unit 조립 시뮬레이터'와 같은 규칙 (단위 mm, 격자 30mm)
+// =====================================================================
+const U_SP = 30, U_HOLE = 6.8, UPI = Math.PI;
+const UPAL = { point: "#F4B9A6", pointSub: "#E9D3CB", line: "#C3B4EA", branch: "#8E77D6", face: "#AEDDCB", faceRim: "#86C8B1", tunnel: "#6E9BE0" };
+const n50 = v => (v == null || isNaN(v)) ? 50 : v;
+
+function urrShape(w, h, r, cx = 0, cy = 0) {
+  const T = THREE; r = Math.max(.5, Math.min(r, w / 2 - .01, h / 2 - .01));
+  const s = new T.Shape(), x = cx - w / 2, y = cy - h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.absarc(x + w - r, y + r, r, -UPI / 2, 0, false);
+  s.lineTo(x + w, y + h - r); s.absarc(x + w - r, y + h - r, r, 0, UPI / 2, false);
+  s.lineTo(x + r, y + h); s.absarc(x + r, y + h - r, r, UPI / 2, UPI, false);
+  s.lineTo(x, y + r); s.absarc(x + r, y + r, r, UPI, 1.5 * UPI, false);
+  return s;
+}
+
+// ---------- 점 ----------
+// ---------- 평면 도면용 계산 (3D 도구 없이도 동작) ----------
+const G = {
+  sub: (a, b) => [a[0] - b[0], a[1] - b[1], (a[2] || 0) - (b[2] || 0)],
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], (a[2] || 0) + (b[2] || 0)],
+  mul: (a, k) => [a[0] * k, a[1] * k, (a[2] || 0) * k],
+  dot: (a, b) => a[0] * b[0] + a[1] * b[1] + (a[2] || 0) * (b[2] || 0),
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  len: a => Math.hypot(a[0], a[1], a[2] || 0),
+  norm: a => { const l = Math.hypot(a[0], a[1], a[2] || 0) || 1; return [a[0] / l, a[1] / l, (a[2] || 0) / l]; },
+  // 축 k(단위벡터)를 중심으로 v를 ang만큼 회전 (로드리게스 공식)
+  rot(v, k, ang) { const c = Math.cos(ang), s = Math.sin(ang), kv = G.cross(k, v), kd = G.dot(k, v);
+    return [v[0] * c + kv[0] * s + k[0] * kd * (1 - c), v[1] * c + kv[1] * s + k[1] * kd * (1 - c), v[2] * c + kv[2] * s + k[2] * kd * (1 - c)]; },
+  // 단위벡터 u를 v로 돌리는 회전을 p에 적용
+  turn(p, u, v) { const ax = G.cross(u, v), sn = G.len(ax), cs = G.dot(u, v);
+    if (sn < 1e-9) { if (cs > 0) return p.slice(); const o = Math.abs(u[0]) < .9 ? [1, 0, 0] : [0, 1, 0]; return G.rot(p, G.norm(G.cross(u, o)), Math.PI); }
+    return G.rot(p, G.mul(ax, 1 / sn), Math.atan2(sn, cs)); },
+  // 둥근 사각형 둘레를 고르게 n개 점으로 (가운데 cx,cy)
+  rrect(w, h, r, n, cx = 0, cy = 0) {
+    r = Math.max(.5, Math.min(r, w / 2 - .01, h / 2 - .01));
+    const x0 = cx - w / 2, y0 = cy - h / 2, pts = [], seg = [];
+    const arc = (ox, oy, a0) => { for (let i = 0; i <= 12; i++) { const a = a0 + i / 12 * Math.PI / 2; seg.push([ox + r * Math.cos(a), oy + r * Math.sin(a), 0]); } };
+    seg.push([x0 + r, y0, 0]); arc(x0 + w - r, y0 + r, -Math.PI / 2); arc(x0 + w - r, y0 + h - r, 0); arc(x0 + r, y0 + h - r, Math.PI / 2); arc(x0 + r, y0 + r, Math.PI); seg.push([x0 + r, y0, 0]);
+    return G.resample(seg, n, true);
+  },
+  // 꺾은선을 길이 기준으로 고르게 n개(열린 선은 n+1개) 점으로
+  resample(pts, n, closed) {
+    const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + G.len(G.sub(pts[i], pts[i - 1])));
+    const L = cum[cum.length - 1] || 1, out = [], m = closed ? n : n + 1;
+    for (let k = 0, j = 1; k < m; k++) { const s = L * k / n; while (j < cum.length - 1 && cum[j] < s) j++;
+      const a = pts[j - 1], b = pts[j], t = (s - cum[j - 1]) / ((cum[j] - cum[j - 1]) || 1); out.push(G.add(a, G.mul(G.sub(b, a), t))); }
+    return out;
+  },
+  // 센트리피털 캣멀-롬 곡선 (조립 시뮬레이터와 같은 곡선)
+  catmull(ctrl, per = 24) {
+    const P = ctrl, n = P.length; if (n < 2) return P.slice();
+    const ext = [G.sub(G.mul(P[0], 2), P[1]), ...P, G.sub(G.mul(P[n - 1], 2), P[n - 2])], out = [];
+    for (let i = 1; i < ext.length - 2; i++) {
+      const p0 = ext[i - 1], p1 = ext[i], p2 = ext[i + 1], p3 = ext[i + 2];
+      const d = (a, b) => Math.max(Math.sqrt(G.len(G.sub(b, a))), 1e-4);
+      let dt0 = d(p0, p1), dt1 = d(p1, p2), dt2 = d(p2, p3); if (dt1 < 1e-4) dt1 = 1; if (dt0 < 1e-4) dt0 = dt1; if (dt2 < 1e-4) dt2 = dt1;
+      const t1 = (k) => (p1[k] - p0[k]) / dt0 - (p2[k] - p0[k]) / (dt0 + dt1) + (p2[k] - p1[k]) / dt1;
+      const t2 = (k) => (p2[k] - p1[k]) / dt1 - (p3[k] - p1[k]) / (dt1 + dt2) + (p3[k] - p2[k]) / dt2;
+      const m1 = [0, 1, 2].map(k => t1(k) * dt1), m2 = [0, 1, 2].map(k => t2(k) * dt1);
+      for (let s = 0; s < per; s++) { const t = s / per, t2_ = t * t, t3 = t2_ * t;
+        const h00 = 2 * t3 - 3 * t2_ + 1, h10 = t3 - 2 * t2_ + t, h01 = -2 * t3 + 3 * t2_, h11 = t3 - t2_;
+        out.push([0, 1, 2].map(k => h00 * p1[k] + h10 * m1[k] + h01 * p2[k] + h11 * m2[k])); }
+    }
+    out.push(P[n - 1].slice()); return out;
+  }
+};
+// 길이 기준으로 위치·방향을 구하는 꺾은선
+function Poly(pts) {
+  const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + G.len(G.sub(pts[i], pts[i - 1])));
+  const L = cum[cum.length - 1] || 1;
+  const seg = t => { const s = clamp(t, 0, 1) * L; let i = 1; while (i < cum.length - 1 && cum[i] < s) i++; return [i, (s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1)]; };
+  return { pts, length: L,
+    at(t) { const [i, u] = seg(t); return G.add(pts[i - 1], G.mul(G.sub(pts[i], pts[i - 1]), u)); },
+    tan(t) { const [i] = seg(t); return G.norm(G.sub(pts[i], pts[i - 1])); },
+    spaced(n) { return G.resample(pts, n, false); } };
+}
+
+// ---------- 점 ----------
+function pointPoly(p) {
+  const acc = n50(p.acc), dur = n50(p.dur), s1 = (n50(p.str1) - 50) / 50, s2 = (n50(p.str2) - 50) / 50, AMP = 8;
+  const r = acc / 100 * 15, a0 = dur / 100 * 288 * UPI / 180;
+  const poly = G.rrect(30, 30, Math.max(.5, r), 260).map(q => {
+    let b = Math.atan2(q[1], q[0]) - a0; b = ((b % (2 * UPI)) + 2 * UPI) % (2 * UPI);
+    const sn = Math.sin(b), k = sn >= 0 ? s1 * sn : s2 * (-sn), len = Math.hypot(q[0], q[1]) || 1, f = Math.max(.15, (len + AMP * k) / len);
+    return { x: q[0] * f, y: q[1] * f, z: sn >= 0 ? 1 : 2 };
+  });
+  return { poly, a0, ax: -15 + n50(p.vis) / 100 * 34 };
+}
+
+function pointSVG(p, label, size) {
+  const { poly, a0, ax } = pointPoly(p);
+  const P = q => `${q.x.toFixed(2)},${(-q.y).toFixed(2)}`;
+  const d = poly.map(P).join(" ");
+  const L = 30, cx = Math.cos(a0), cy = Math.sin(a0);
+  const lbl = (g, t, c) => `<text x="${(Math.cos(g) * 8).toFixed(1)}" y="${(-Math.sin(g) * 8 + 1.4).toFixed(1)}" font-size="4" text-anchor="middle" font-weight="700" fill="${c}">${t}</text>`;
+  return `<svg viewBox="-32 -32 64 64" width="${size}" height="${size}" role="img" aria-label="${esc(label)} 평면">
+    <rect x="-15" y="-15" width="30" height="30" fill="none" stroke="var(--rule)" stroke-width=".3" stroke-dasharray="1 .8"/>
+    <polygon points="${d}" fill="${UPAL.point}" fill-opacity=".55" stroke="var(--ink)" stroke-width=".45" stroke-linejoin="round"/>
+    <line x1="${(-cx * L).toFixed(2)}" y1="${(cy * L).toFixed(2)}" x2="${(cx * L).toFixed(2)}" y2="${(-cy * L).toFixed(2)}" stroke="var(--ink)" stroke-width=".35"/>
+    ${lbl(a0 + UPI / 2, "1", "var(--ink)")}${lbl(a0 - UPI / 2, "2", "var(--ink)")}
+    <line x1="${ax.toFixed(2)}" y1="-31" x2="${ax.toFixed(2)}" y2="31" stroke="var(--yes)" stroke-width=".45" stroke-dasharray="1.6 1"/>
+    <text x="${(ax + 1).toFixed(2)}" y="-27" font-size="3.4" fill="var(--yes)">회전축</text>
+  </svg>`;
+}
+function buildPoint(T, p, color) {
+  const { poly, ax } = pointPoly(p);
+  let ymin = Infinity, ymax = -Infinity; poly.forEach(q => { ymin = Math.min(ymin, q.y); ymax = Math.max(ymax, q.y); });
+  const N = 80, ys = [], outer = [], inner = [];
+  for (let i = 0; i <= N; i++) {
+    const y = ymin + .02 + (ymax - ymin - .04) * i / N, xs = [];
+    for (let j = 0; j < poly.length; j++) { const a = poly[j], b = poly[(j + 1) % poly.length]; if ((a.y <= y && b.y > y) || (b.y <= y && a.y > y)) xs.push(a.x + (y - a.y) / (b.y - a.y) * (b.x - a.x)); }
+    xs.sort((u, v) => u - v);
+    let o = 0, inn = Infinity, inside = false;
+    for (let k = 0; k + 1 < xs.length; k += 2) { const x0 = xs[k], x1 = xs[k + 1];
+      if (ax >= x0 && ax <= x1) { inside = true; o = Math.max(o, ax - x0, x1 - ax); }
+      else { const d0 = Math.abs(x0 - ax), d1 = Math.abs(x1 - ax); o = Math.max(o, d0, d1); inn = Math.min(inn, d0, d1); } }
+    ys.push(y); outer.push(o); inner.push(inside || !isFinite(inn) ? 0 : inn);
+  }
+  const sm = (a, n) => { for (let k = 0; k < n; k++) a = a.map((v, i) => i === 0 || i === a.length - 1 ? v : (a[i - 1] + v * 2 + a[i + 1]) / 4); return a; };
+  const so = sm(outer, 3), si = sm(inner, 2), prof = [];
+  for (let i = 0; i <= N; i++) prof.push(new T.Vector2(Math.max(so[i], U_HOLE + 1.6), ys[i]));
+  for (let i = N; i >= 0; i--) prof.push(new T.Vector2(Math.max(si[i], U_HOLE), ys[i]));
+  prof.push(prof[0].clone());
+  const geo = new T.LatheGeometry(prof, 96); geo.translate(0, -(ymin + ymax) / 2, 0);
+  return new T.Mesh(geo, new T.MeshStandardMaterial({ color, roughness: .35, side: T.DoubleSide }));
+}
+
+// ---------- 선 ----------
+// 지속성 답: 그렇지 않다=왼쪽 열, 보통이다=가운데, 그렇다=오른쪽 열. 연애 경험 없음 = 3행을 가로지르는 일자(2행에서 3행 맨 왼쪽으로)
+function lineParams(m) {
+  const q = id => { const x = m[id]; if (!x) return 1; if (x.answer === "연애 경험 없음") return 3; const i = idxOf(m, id); return i == null ? 1 : i; };
+  return { q1: q("o_dur1"), q2: q("o_dur2"), q3: q("o_dur3"), thick: n50(scoreOf(m, "o_str")), curve: n50(scoreOf(m, "o_acc")), foldAngle: n50(scoreOf(m, "o_vis1")) * 1.8, foldPos: n50(scoreOf(m, "o_vis2")) };
+}
+const lineR = v => 2 + v / 100 * 4.2;
+function lineCurve(L) {
+  const col = v => (v - 1) * U_SP, c = L.curve / 100;
+  const pts = [[col(L.q1), U_SP, 0], [col(L.q2), 0, 0]];
+  if (L.q3 === 3) pts.push([-U_SP, -U_SP, 0], [U_SP, -U_SP, 0]); else pts.push([col(L.q3), -U_SP, 0]);
+  const ctrl = [pts[0].slice()], k = .14 * (1 - c) + .02;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1], d = G.sub(b, a), len = G.len(d); if (len < .01) continue;
+    const perp = G.mul(G.norm([-d[1], d[0], 0]), (i % 2 ? -1 : 1) * c * len * .3);
+    ctrl.push(G.add(a, G.mul(d, k)), G.add(G.add(a, G.mul(d, .5)), perp), G.add(a, G.mul(d, 1 - k)), b.slice());
+  }
+  const raw = G.resample(G.catmull(ctrl), 320, false);
+  const fy = U_SP - L.foldPos / 100 * 2 * U_SP, ang = L.foldAngle * UPI / 180;
+  const folded = raw.map(p => { if (p[1] >= fy) return p.slice(); const dd = fy - p[1], w = Math.min(1, dd / 9), t = w * w * (3 - 2 * w), a = ang * t; return [p[0], fy - dd * Math.cos(a), dd * Math.sin(a)]; });
+  return { main: Poly(G.resample(G.catmull(folded.filter((_, i) => i % 4 === 0 || i === folded.length - 1), 6), 400, false)), raw, fy };
+}
+function lineBranches(m, L) {
+  const out = [];
+  const add = (id, title, patch) => { const f = m[id + "__fu"]; if (!f) return; const P = { ...L }; let at = L.thick; const r = patch(P, f); if (r != null) at = r; out.push({ title, P, attach: at }); };
+  add("o_str", "강도 → 붙는 위치", (P, f) => f.score);
+  ["o_dur1", "o_dur2", "o_dur3"].forEach((id, r) => add(id, `지속성 ${r + 1}행`, (P, f) => { const i = idxOf(m, id + "__fu"); if (i != null) P["q" + (r + 1)] = i; }));
+  add("o_acc", "수용 태도 → 곡선도", (P, f) => { if (f.score != null) P.curve = f.score; });
+  add("o_vis1", "가시성 1 → 꺾임 각도", (P, f) => { const v = f.value ?? f.score; if (v != null) P.foldAngle = clamp(v, 0, 100) * 1.8; });
+  add("o_vis2", "가시성 2 → 꺾임 위치", (P, f) => { if (f.score != null) P.foldPos = f.score; });
+  out.forEach((b, i) => { b.dir = (60 + i * 360 / out.length) % 360; });   // 가지끼리 겹치지 않게 선 둘레로 고르게 돌려 붙임
+  return out;
+}
+const BR_SCALE = .6;   // 추가 선 크기 (기본 선 대비)
+function branchPoints(base, b) {
+  const t = clamp(b.attach / 100, 0, 1), P = base.at(t), Tg = base.tan(t);
+  const ref = Math.abs(Tg[2]) < .9 ? [0, 0, 1] : [1, 0, 0];
+  const N = G.rot(G.norm(G.cross(Tg, ref)), Tg, b.dir * UPI / 180);
+  const own = lineCurve(b.P).main, pts = own.spaced(160), p0 = pts[0];
+  const u = own.tan(0);
+  return { at: P, pts: pts.map(p => G.add(G.turn(G.mul(G.sub(p, p0), BR_SCALE), u, N), P)) };
+}
+function lineSVG(L, brs) {
+  const { main, raw, fy } = lineCurve(L), mp = main.spaced(220), bps = brs.map(b => branchPoints(main, b).pts);
+  const w = lineR(L.thick) * 2, deg = Math.round(L.foldAngle);
+  let x0 = -50, x1 = 50, y0 = -50, y1 = 50;
+  [mp, ...bps].forEach(a => a.forEach(p => { x0 = Math.min(x0, p[0] - 6); x1 = Math.max(x1, p[0] + 6); y0 = Math.min(y0, p[1] - 6); y1 = Math.max(y1, p[1] + 6); }));
+  const pXY = a => "M" + a.map(p => `${p[0].toFixed(1)} ${(-p[1]).toFixed(1)}`).join("L");
+  const grid = [-1, 0, 1].flatMap(c => [-1, 0, 1].map(r => `<rect x="${c * 30 - 15}" y="${-r * 30 - 15}" width="30" height="30" fill="none" stroke="var(--rule)" stroke-width=".6"/>`)).join("");
+  const front = `<svg viewBox="${x0.toFixed(0)} ${(-y1).toFixed(0)} ${(x1 - x0).toFixed(0)} ${(y1 - y0).toFixed(0)}" style="width:100%;height:auto;max-height:280px" role="img" aria-label="선 정면">
+    ${grid}
+    <line x1="${x0}" y1="${(-fy).toFixed(1)}" x2="${x1}" y2="${(-fy).toFixed(1)}" stroke="var(--yes)" stroke-width=".8" stroke-dasharray="3 2"/>
+    <text x="${x0 + 2}" y="${(-fy - 2).toFixed(1)}" font-size="5" fill="var(--yes)">꺾임 축</text>
+    <path d="${pXY(raw)}" fill="none" stroke="var(--muted)" stroke-width=".6" stroke-dasharray="2 2"/>
+    ${bps.map(a => `<path d="${pXY(a)}" fill="none" stroke="${UPAL.branch}" stroke-width="${(w * BR_SCALE).toFixed(1)}" stroke-linecap="round" opacity=".75"/>`).join("")}
+    <path d="${pXY(mp)}" fill="none" stroke="var(--ink)" stroke-width="${w.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+  </svg>`;
+  let z1 = 20, zmin = -8; [mp, ...bps].forEach(a => a.forEach(p => { z1 = Math.max(z1, p[2] + 6); zmin = Math.min(zmin, p[2] - 6); }));
+  const pZY = a => "M" + a.map(p => `${p[2].toFixed(1)} ${(-p[1]).toFixed(1)}`).join("L");
+  const side = `<svg viewBox="${zmin.toFixed(0)} ${(-y1).toFixed(0)} ${(z1 - zmin).toFixed(0)} ${(y1 - y0).toFixed(0)}" style="width:100%;height:auto;max-height:280px" role="img" aria-label="선 옆면">
+    <line x1="0" y1="${(-y1)}" x2="0" y2="${(-y0)}" stroke="var(--rule)" stroke-width=".8"/>
+    <text x="1.5" y="${(-y1 + 6).toFixed(0)}" font-size="5" fill="var(--muted)">격자 면</text>
+    <line x1="${zmin}" y1="${(-fy).toFixed(1)}" x2="${z1}" y2="${(-fy).toFixed(1)}" stroke="var(--yes)" stroke-width=".8" stroke-dasharray="3 2"/>
+    ${bps.map(a => `<path d="${pZY(a)}" fill="none" stroke="${UPAL.branch}" stroke-width="${(w * BR_SCALE).toFixed(1)}" stroke-linecap="round" opacity=".75"/>`).join("")}
+    <path d="${pZY(mp)}" fill="none" stroke="var(--ink)" stroke-width="${w.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="${(zmin + 2)}" y="${(-y0 - 3).toFixed(0)}" font-size="5" fill="var(--yes)">→ 앞으로 ${deg}° 들림</text>
+  </svg>`;
+  return { front, side, deg };
+}
+function buildLine(T, L, brs) {
+  const g = new T.Group(), { main } = lineCurve(L), R = lineR(L.thick);
+  const V = a => new T.Vector3(a[0], a[1], a[2]);
+  const mat = new T.MeshStandardMaterial({ color: UPAL.line, roughness: .35 }), bmat = new T.MeshStandardMaterial({ color: UPAL.branch, roughness: .4 });
+  const tube = (arr, r, mt) => { const c = new T.CatmullRomCurve3(arr.map(V)); g.add(new T.Mesh(new T.TubeGeometry(c, 240, r, 20, false), mt)); [arr[0], arr[arr.length - 1]].forEach(p => { const s = new T.Mesh(new T.SphereGeometry(r, 20, 14), mt); s.position.copy(V(p)); g.add(s); }); };
+  tube(main.spaced(120), R, mat);
+  brs.forEach(b => { const bp = branchPoints(main, b); tube(bp.pts.filter((_, i) => i % 4 === 0 || i === bp.pts.length - 1), R, bmat); });
+  const gv = []; for (let i = 0; i < 4; i++) { const c = -45 + i * 30; gv.push(c, 45, 0, c, -45, 0, -45, c, 0, 45, c, 0); }
+  const gg = new T.BufferGeometry(); gg.setAttribute("position", new T.Float32BufferAttribute(gv, 3));
+  g.add(new T.LineSegments(gg, new T.LineBasicMaterial({ color: 0x9a94a6, transparent: true, opacity: .45 })));
+  return g;
+}
+
+// ---------- 면 ----------
+function faceParams(m) {
+  const v = id => n50(scoreOf(m, id)), col = id => { const i = idxOf(m, id); return i == null ? 3 : i + 1; };   // 매우 그렇지 않다=1 … 매우 그렇다=5
+  return { dur: v("e_dur"), acc: v("e_acc"), str: ["e_str1", "e_str2", "e_str3"].map(col), vis: ["e_vis1", "e_vis2", "e_vis3"].map(col) };
+}
+function faceLayers(m, F) {
+  const col = id => { const i = idxOf(m, id); return i == null ? 3 : i + 1; };
+  const tunnels = ["e_vis1", "e_vis2", "e_vis3"].map((id, r) => m[id + "__fu"] ? { r, c: col(id + "__fu") - 1 } : null).filter(Boolean);
+  const layers = [];
+  const mk = (id, title, patch) => { if (!m[id + "__fu"]) return; const s = { ...F, str: [...F.str], vis: [...F.vis] }; patch(s); layers.push({ title, F: s }); };
+  mk("e_dur", "지속성", s => s.dur = n50(scoreOf(m, "e_dur__fu")));
+  ["e_str1", "e_str2", "e_str3"].forEach((id, r) => mk(id, `강도 ${r + 1}행`, s => s.str[r] = col(id + "__fu")));
+  mk("e_acc", "수용 태도", s => s.acc = n50(scoreOf(m, "e_acc__fu")));
+  ["e_vis1", "e_vis2", "e_vis3"].forEach((id, r) => mk(id, `가시성 ${r + 1}행`, s => s.vis[r] = col(id + "__fu")));
+  return { tunnels, layers };
+}
+const faceBase = v => 16 + v * .1;
+function sdRR(px, py, cx, cy, hx, hy, r) { const qx = Math.abs(px - cx) - hx + r, qy = Math.abs(py - cy) - hy + r; return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r; }
+function smin(a, b, k) { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * .25; }
+function faceLayout(F, full) {
+  const base = faceBase(F.dur), rk = .06 + .94 * F.acc / 100, size = [], cov = [];
+  const cx = c => (c - 2) * U_SP, cy = r => (1 - r) * U_SP;
+  for (let r = 0; r < 3; r++) { size[r] = []; cov[r] = []; for (let c = 0; c < 5; c++) { size[r][c] = base * (F.str[r] - 1 === c ? 1.45 : 1); cov[r][c] = full || c < F.vis[r]; } }
+  const pad = 4.5, parts = [];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) { if (!cov[r][c]) continue;
+    const s = size[r][c]; parts.push([cx(c), cy(r), s / 2 + pad, s / 2 + pad, s / 2 * rk + pad]);
+    if (c < 4 && cov[r][c + 1]) { const h = Math.min(s, size[r][c + 1]) / 2 + pad; parts.push([cx(c) + U_SP / 2, cy(r), U_SP / 2, h, Math.min(h, 6)]); }
+    if (r < 2 && cov[r + 1][c]) { const w = Math.min(s, size[r + 1][c]) / 2 + pad; parts.push([cx(c), cy(r) - U_SP / 2, w, U_SP / 2, Math.min(w, 6)]); } }
+  const field = (x, y) => { let d = 1e9; for (const p of parts) d = smin(d, sdRR(x, y, p[0], p[1], p[2], p[3], p[4]), 3); return d; };
+  return { base, rk, size, cov, cx, cy, field };
+}
+function contour(f, x0, y0, st, nx, ny) {
+  const W = nx + 1, v = new Float32Array(W * (ny + 1));
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) v[j * W + i] = f(x0 + i * st, y0 + j * st);
+  const pts = new Map(), adj = new Map();
+  const P = (k, ax, ay, bx, by) => { if (!pts.has(k)) { const va = v[ay * W + ax], vb = v[by * W + bx], t = va / (va - vb); pts.set(k, { x: x0 + (ax + (bx - ax) * t) * st, y: y0 + (ay + (by - ay) * t) * st }); } return k; };
+  const link = (a, b) => { (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); };
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const a = v[j * W + i] < 0, b = v[j * W + i + 1] < 0, c = v[(j + 1) * W + i + 1] < 0, d = v[(j + 1) * W + i] < 0, cs = a | b << 1 | c << 2 | d << 3;
+    if (cs === 0 || cs === 15) continue;
+    const e0 = () => P("h" + i + "," + j, i, j, i + 1, j), e1 = () => P("v" + (i + 1) + "," + j, i + 1, j, i + 1, j + 1), e2 = () => P("h" + i + "," + (j + 1), i, j + 1, i + 1, j + 1), e3 = () => P("v" + i + "," + j, i, j, i, j + 1);
+    const mid = (v[j * W + i] + v[j * W + i + 1] + v[(j + 1) * W + i + 1] + v[(j + 1) * W + i]) / 4 < 0;
+    switch (cs) {
+      case 1: case 14: link(e3(), e0()); break; case 2: case 13: link(e0(), e1()); break; case 3: case 12: link(e3(), e1()); break;
+      case 4: case 11: link(e1(), e2()); break; case 6: case 9: link(e0(), e2()); break; case 7: case 8: link(e3(), e2()); break;
+      case 5: if (mid) { link(e0(), e1()); link(e2(), e3()); } else { link(e3(), e0()); link(e1(), e2()); } break;
+      case 10: if (mid) { link(e3(), e0()); link(e1(), e2()); } else { link(e0(), e1()); link(e2(), e3()); } break;
+    }
+  }
+  const seen = new Set(), loops = [];
+  for (const start of adj.keys()) { if (seen.has(start)) continue; const loop = []; let prev = null, cur = start;
+    while (cur && !seen.has(cur)) { seen.add(cur); loop.push(pts.get(cur)); const nn = adj.get(cur); const nx2 = nn[0] !== prev ? nn[0] : nn[1]; prev = cur; cur = nx2; }
+    if (loop.length > 8) loops.push(loop.filter((_, k) => k % 2 === 0)); }
+  return loops;
+}
+const faceLoops = lay => contour(lay.field, -2.5 * U_SP - 30, -1.5 * U_SP - 30, .8, Math.ceil((5 * U_SP + 60) / .8), Math.ceil((3 * U_SP + 60) / .8));
+function faceSVG(F, tunnels, full) {
+  const lay = faceLayout(F, full), loops = faceLoops(lay);
+  const outline = loops.map(l => "M" + l.map(p => `${p.x.toFixed(1)} ${(-p.y).toFixed(1)}`).join("L") + "Z").join("");
+  let mods = "";
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) {
+    const s = lay.size[r][c], x = lay.cx(c), y = -lay.cy(r), on = lay.cov[r][c], tun = tunnels.some(t => t.r === r && t.c === c);
+    mods += `<rect x="${(x - s / 2).toFixed(1)}" y="${(y - s / 2).toFixed(1)}" width="${s.toFixed(1)}" height="${s.toFixed(1)}" rx="${(s / 2 * lay.rk).toFixed(1)}" fill="${tun ? UPAL.tunnel : on ? UPAL.faceRim : "none"}" stroke="${on ? "var(--ink)" : "var(--rule)"}" stroke-width=".5" ${on ? "" : 'stroke-dasharray="1.5 1.2"'}/>`;
+    if (on) mods += `<circle cx="${x}" cy="${y}" r="${U_HOLE}" fill="var(--bg)" stroke="var(--ink)" stroke-width=".4"/>`;
+  }
+  return `<svg viewBox="-95 -65 190 130" style="width:100%;height:auto" role="img" aria-label="면 평면">
+    <path d="${outline}" fill="${UPAL.face}" fill-opacity=".55" stroke="var(--ink)" stroke-width=".8" fill-rule="evenodd"/>${mods}</svg>`;
+}
+function buildFacePlate(T, F, full, mats) {
+  const g = new T.Group(), lay = faceLayout(F, full), loops = faceLoops(lay);
+  const area = l => { let s = 0; for (let i = 0; i < l.length; i++) { const a = l[i], b = l[(i + 1) % l.length]; s += a.x * b.y - b.x * a.y; } return s / 2; };
+  const inside = (pt, l) => { let c = false; for (let i = 0, j = l.length - 1; i < l.length; j = i++) { const a = l[i], b = l[j]; if ((a.y > pt.y) !== (b.y > pt.y) && pt.x < (b.x - a.x) * (pt.y - a.y) / (b.y - a.y) + a.x) c = !c; } return c; };
+  loops.sort((p, q) => Math.abs(area(q)) - Math.abs(area(p)));
+  const V2 = T.Vector2, toV = l => l.map(p => new V2(p.x, p.y));
+  const outer = loops[0], shapes = [new T.Shape(toV(outer))];
+  loops.slice(1).forEach(l => { if (inside(l[0], outer)) shapes[0].holes.push(new T.Path(toV(l))); else shapes.push(new T.Shape(toV(l))); });
+  const hole = (x, y, r) => { const p = new T.Path(); p.absarc(x, y, r, 0, 2 * UPI, true); return p; };
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) if (lay.cov[r][c]) shapes[0].holes.push(hole(lay.cx(c), lay.cy(r), U_HOLE + .8));
+  const ext = (sh, depth, bev) => new T.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 2, curveSegments: 20 });
+  shapes.forEach(sh => g.add(new T.Mesh(ext(sh, 3.6, .8), mats.a)));
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) { if (!lay.cov[r][c]) continue;
+    const s = lay.size[r][c], sh = urrShape(s, s, s / 2 * lay.rk, lay.cx(c), lay.cy(r)); sh.holes.push(hole(lay.cx(c), lay.cy(r), U_HOLE + .8));
+    const geo = ext(sh, 1.2, .5); geo.translate(0, 0, 4); g.add(new T.Mesh(geo, mats.b)); }
+  return { g, lay };
+}
+const FACE_GAP = 34;   // 층 간격(mm)
+function buildFaceStack(T, F, layers, tunnels) {
+  const root = new T.Group();
+  const mats = { a: new T.MeshStandardMaterial({ color: UPAL.face, roughness: .35, transparent: true, opacity: .92 }), b: new T.MeshStandardMaterial({ color: UPAL.faceRim, roughness: .35 }) };
+  const tmat = new T.MeshStandardMaterial({ color: UPAL.tunnel, roughness: .35 });
+  root.add(buildFacePlate(T, F, false, mats).g);
+  layers.forEach((L, i) => {
+    const z = (i + 1) * FACE_GAP, { g, lay } = buildFacePlate(T, L.F, true, mats); g.position.z = z; root.add(g);
+    tunnels.forEach(t => {   // 통로: 이 층 아랫면에서 바로 아래층 구멍까지
+      const len = FACE_GAP - 4 + 2, cyl = new T.Mesh(new T.CylinderGeometry(U_HOLE - .4, U_HOLE - .4, len, 24), tmat);
+      cyl.rotation.x = UPI / 2; cyl.position.set(lay.cx(t.c), lay.cy(t.r), z - len / 2 + 1); root.add(cyl);
+    });
+  });
+  root.rotation.x = -UPI / 2;   // 판을 바닥에 눕혀서 위로 쌓기
+  const wrap = new T.Group(); wrap.add(root); return wrap;
+}
+
+// ---------- 3D 보기 ----------
+const V3S = [];
+function makeViewer(canvas, height) {
+  const T = THREE, renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new T.Scene(), camera = new T.PerspectiveCamera(32, 1, .5, 6000);
+  scene.add(new T.HemisphereLight(0xffffff, 0xb9b0c6, .75));
+  const d1 = new T.DirectionalLight(0xffffff, .8); d1.position.set(120, 260, 180); scene.add(d1);
+  const d2 = new T.DirectionalLight(0xffffff, .3); d2.position.set(-160, -60, -120); scene.add(d2);
+  const root = new T.Group(); scene.add(root);
+  const controls = T.OrbitControls ? new T.OrbitControls(camera, canvas) : null;
+  if (controls) { controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = false; }
+  let R = 60, raf = 0, dir = [1, .7, 1.3];
+  function place() {
+    const v = new T.Vector3(...dir).normalize(), vh = camera.fov * UPI / 360, hh = Math.atan(Math.tan(vh) * camera.aspect);
+    camera.position.copy(v.multiplyScalar(R / Math.sin(Math.min(vh, hh)) * 1.08)); camera.lookAt(0, 0, 0);
+    if (controls) { controls.target.set(0, 0, 0); controls.update(); }
+  }
+  function size() { const w = canvas.clientWidth || 300; renderer.setSize(w, height, false); camera.aspect = w / height; camera.updateProjectionMatrix(); }
+  const ro = new ResizeObserver(() => { size(); }); ro.observe(canvas);
+  (function loop() { controls?.update(); renderer.render(scene, camera); raf = requestAnimationFrame(loop); })();
+  const api = {
+    root, add(o) { root.add(o); },
+    fit(d) { if (d) dir = d; const box = new T.Box3().setFromObject(root), c = box.getCenter(new T.Vector3()); root.position.sub(c); R = Math.max(box.getSize(new T.Vector3()).length() / 2, 10); size(); place(); },
+    view(d) { dir = d; place(); },
+    dispose() { cancelAnimationFrame(raf); ro.disconnect(); controls?.dispose(); scene.traverse(o => { o.geometry?.dispose?.(); o.material?.dispose?.(); }); renderer.dispose(); }
+  };
+  V3S.push(api); return api;
+}
+function disposeViewers() { while (V3S.length) V3S.pop().dispose(); }
+function viewButtons(id, views) {
+  return `<div class="views" data-for="${id}">${views.map((v, i) => `<button type="button" class="vbtn" data-dir="${v[1].join(",")}" aria-pressed="${i === 0}">${v[0]}</button>`).join("")}</div>`;
+}
+
+function openPerson(code) {
+  const r = RESP.find(x => x.code === code); if (!r) return;
+  const m = Object.fromEntries((r.rows || []).map(x => [x.id, x]));
+  const [S1, S2, S3] = SECTIONS.filter(s => s.qs);
+  closePerson();
+  if (!window.THREE) {
+    document.body.insertAdjacentHTML("beforeend", `<div class="drawer-bg" id="drawer-bg"></div><aside class="drawer" id="drawer"><div class="drawer-head"><h2>${esc(r.nickname || "")}</h2><button class="btn" id="drawer-close" type="button">닫기</button></div><p class="note">입체 도구를 불러오지 못해 유닛을 그릴 수 없어요. 인터넷 연결을 확인하고 새로고침해 주세요.</p></aside>`);
+    document.getElementById("drawer-close").addEventListener("click", closePerson); document.getElementById("drawer-bg").addEventListener("click", closePerson); return;
+  }
+  const dots = dotUnits(m);
+  const L = lineParams(m), brs = lineBranches(m, L), lsvg = lineSVG(L, brs);
+  const F = faceParams(m), { tunnels, layers } = faceLayers(m, F);
+  const LV = [["비스듬히", [1, .7, 1.3]], ["정면", [0, 0, 1]], ["옆면", [1, 0, 0]], ["위", [0, 1, .02]]];
+  const PV = [["비스듬히", [1, .6, 1.4]], ["정면", [0, 0, 1]], ["위", [0, 1, .02]]];
+  const FV = [["비스듬히", [1, .9, 1.2]], ["옆면", [1, .05, 0]], ["위", [0, 1, .02]]];
+  document.body.insertAdjacentHTML("beforeend", `<div class="drawer-bg" id="drawer-bg"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-label="${esc(r.nickname || "")}의 유닛">
+    <div class="drawer-head"><div><h2>${esc(r.nickname || "(이름 없음)")}</h2><p>응답 번호 ${esc(r.code)} · 취향 ${esc(r.open?.taste || "·")} · 비밀 습관 ${esc(r.open?.habit || "·")} · 영향을 준 사람 ${esc(r.open?.person || "·")}</p></div>
+      <button class="btn" id="drawer-close" type="button">닫기</button></div>
+    <div class="counts">
+      <div><b>${dots.length}</b><span>점 (기본 1 + 추가 ${dots.length - 1})</span></div>
+      <div><b>1 + ${brs.length}</b><span>선 (기본 + 추가 선)</span></div>
+      <div><b>1 + ${layers.length}</b><span>면 (면 1 + 면 그래픽 2)</span></div>
+    </div>
+
+    <section class="unit">
+      <div class="unit-title">${shapeSVG("dot", "--c-self", 22)}<h3>점 · ${S1.name}</h3><span class="tag">점 ${dots.length}개</span></div>
+      <div class="unit-pair">
+        <div class="unit-figs">${dots.map(u => `<figure>${pointSVG(u.p, u.label, dots.length > 2 ? 104 : 150)}<figcaption>${u.label}</figcaption></figure>`).join("")}</div>
+        <figure class="v3"><canvas id="cv-dot"></canvas>${viewButtons("cv-dot", PV)}<figcaption>입체 · 드래그로 돌리기, 휠·두 손가락으로 확대</figcaption></figure>
+      </div>
+      <p class="note">평면은 단면이에요. 1·2는 분할축으로 나뉜 구역이고, 파란 점선(회전축)을 중심으로 360° 돌린 것이 입체예요. 가운데에 선을 꿰는 구멍이 있어요.</p>
+      ${valsTable(S1, m)}
+    </section>
+
+    <section class="unit">
+      <div class="unit-title">${shapeSVG("line", "--c-other", 22)}<h3>선 · ${S2.name}</h3><span class="tag">기본 선 1 + 추가 선 ${brs.length}개</span></div>
+      <div class="unit-pair">
+        <div class="line-views">
+          <figure>${lsvg.front}<figcaption>정면 · 점선 = 꺾이기 전 경로</figcaption></figure>
+          <figure>${lsvg.side}<figcaption>옆면 · 오른쪽에서 본 모습</figcaption></figure>
+        </div>
+        <figure class="v3"><canvas id="cv-line"></canvas>${viewButtons("cv-line", LV)}<figcaption>입체 · 꺾임 ${lsvg.deg}° · 보라 = 추가 선</figcaption></figure>
+      </div>
+      ${brs.length ? `<table class="vals"><thead><tr><th>추가 선</th><th>바뀐 값</th><th>붙는 위치 (선을 따라간 거리 %)</th></tr></thead><tbody>${brs.map((b, i) => `<tr><td>${i + 1}</td><td class="l">${b.title}</td><td><span class="n">${Math.round(b.attach)}</span></td></tr>`).join("")}</tbody></table>` : `<p class="note">열린 추가 질문이 없어서 추가 선은 없어요.</p>`}
+      <p class="note">꺾임 축(파란 점선) 아래쪽이 정면 쪽으로 들려요. 추가 선은 기본 선 값을 쓰고 추가 답이 있는 값만 바꿔요. 강도는 두께 대신 붙는 위치(선 시작 0 → 끝 100)를 정하고, 두께는 기본 선과 같아요.</p>
+      ${valsTable(S2, m)}
+    </section>
+
+    <section class="unit">
+      <div class="unit-title">${shapeSVG("plane", "--c-env", 22)}<h3>면 · ${S3.name}</h3><span class="tag">면 1 + 면 그래픽 2 ${layers.length}장 · 통로 ${tunnels.length}개/장</span></div>
+      <div class="unit-pair">
+        <div class="unit-figs"><figure style="width:100%">${faceSVG(F, [], false)}<figcaption>면 그래픽 1 평면 · 테두리 안쪽만 면이 돼요</figcaption></figure></div>
+        <figure class="v3"><canvas id="cv-face"></canvas>${viewButtons("cv-face", FV)}<figcaption>입체 · 아래부터 1층, 파랑 = 통로</figcaption></figure>
+      </div>
+      ${layers.length ? `<div class="unit-figs">${layers.map((Lr, i) => `<figure style="width:150px">${faceSVG(Lr.F, tunnels, true)}<figcaption>${i + 2}층 · ${Lr.title}</figcaption></figure>`).join("")}</div>` : ""}
+      <p class="note">면 그래픽 2는 기본 답을 그대로 쓰고 추가 질문이 열린 항목만 바꿔 만들어요. 통로는 가시성 추가 질문이 열린 행의 모듈이에요.${layers.length && !tunnels.length ? " 이 사람은 가시성 추가 질문이 없어서 면 그래픽 2에 통로가 없어요." : ""}</p>
+      ${valsTable(S3, m)}
+    </section>
+  </aside>`);
+  document.getElementById("drawer-close").addEventListener("click", closePerson);
+  document.getElementById("drawer-bg").addEventListener("click", closePerson);
+  const T = THREE, viewers = {};
+  const fail = (id, e) => { console.error(e); const c = document.getElementById(id); if (c) c.insertAdjacentHTML("afterend", `<p class="note">입체를 그리지 못했어요: ${esc(e.message || String(e))}</p>`); };
+  try { const v = makeViewer(document.getElementById("cv-dot"), 280); dots.forEach((u, i) => { const me = buildPoint(T, u.p, i === 0 ? UPAL.point : UPAL.pointSub); me.position.x = i * 46; v.add(me); }); v.fit(PV[0][1]); viewers["cv-dot"] = v; } catch (e) { fail("cv-dot", e); }
+  try { const v = makeViewer(document.getElementById("cv-line"), 300); v.add(buildLine(T, L, brs)); v.fit(LV[0][1]); viewers["cv-line"] = v; } catch (e) { fail("cv-line", e); }
+  try { const v = makeViewer(document.getElementById("cv-face"), 300); v.add(buildFaceStack(T, F, layers, tunnels)); v.fit(FV[0][1]); viewers["cv-face"] = v; } catch (e) { fail("cv-face", e); }
+  document.querySelectorAll("#drawer .views").forEach(box => box.addEventListener("click", e => {
+    const b = e.target.closest(".vbtn"); if (!b) return; const v = viewers[box.dataset.for]; if (!v) return;
+    v.view(b.dataset.dir.split(",").map(Number)); box.querySelectorAll(".vbtn").forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+  document.getElementById("drawer-close").focus();
+}
+function closePerson() { disposeViewers(); document.getElementById("drawer")?.remove(); document.getElementById("drawer-bg")?.remove(); }
+document.addEventListener("click", e => { const b = e.target.closest(".who"); if (b) openPerson(b.dataset.code); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePerson(); });
+
+
+// ---------- 분포로 보기: 질문마다 0~100 선 위에 응답자 한 명 = 점 하나 ----------
+let ADMIN_TAB = "dist";
+function distScale(cfg, x) {   // 응답 하나를 0~100 위치로
+  if (!x) return null;
+  if (cfg.type === "money") return x.value == null ? null : clamp((x.value - 10) / 990 * 100, 0, 100);
+  if (cfg.type === "people") return x.value ?? x.score ?? null;
+  return typeof x.score === "number" ? x.score : null;
+}
+function distEnds(cfg) {
+  if (cfg.type === "duration") return ["0시간 (루틴 없음 포함)", "1년 이상"];
+  if (cfg.type === "money") return ["10만 원 이하", "1000만 원 이상"];
+  if (cfg.type === "people") return ["0명", "100명 이상"];
+  if (cfg.type === "three") return [THREE[0], THREE[2]];
+  const t = cfg.ticks || cfg.opts || FIVE; return [t[0], t[t.length - 1]];
+}
+function distRow(label, text, pts, ends, opts = {}) {
+  // pts: [{v, name, code, ans}]
+  const W = 660, x0 = 122, x1 = 530, X = v => x0 + (x1 - x0) * v / 100, R = 5.5;
+  const placed = [], bins = [];
+  pts.slice().sort((a, b) => a.v - b.v).forEach(p => {
+    const x = X(p.v); let lvl = 0;
+    while (placed.some(q => q.lvl === lvl && Math.abs(q.x - x) < R * 2 + 1)) lvl++;
+    placed.push({ ...p, x, lvl });
+  });
+  const maxLvl = placed.reduce((a, p) => Math.max(a, p.lvl), 0);
+  const base = 14 + maxLvl * (R * 2 + 1) + R, H = base + 44;
+  const col = v => opts.neutral ? "var(--ink)" : v <= 40 ? "var(--no)" : v >= 60 ? "var(--yes)" : "var(--muted)";
+  const mean = pts.length ? pts.reduce((a, p) => a + p.v, 0) / pts.length : null;
+  const dots = placed.map(p => `<circle class="dd" data-code="${esc(p.code)}" cx="${p.x.toFixed(1)}" cy="${(base - p.lvl * (R * 2 + 1)).toFixed(1)}" r="${R}" fill="${col(p.v)}" fill-opacity=".85" stroke="var(--paper)" stroke-width="1.2"><title>${esc(p.name)} · ${esc(p.ans)}</title></circle>`).join("");
+  const ticks = [0, 25, 50, 75, 100].map(t => `<line x1="${X(t)}" y1="${base + R + 3}" x2="${X(t)}" y2="${base + R + 8}" stroke="var(--rule)" stroke-width="1"/>`).join("");
+  return `<div class="drow${opts.fu ? " dfu" : ""}">
+    <div class="dq"><span class="dn">${label}</span><span class="dt">${esc(text)}</span><span class="dc">${pts.length}명${opts.extra ? " · " + opts.extra : ""}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="${esc(text)} 응답 분포">
+      <line x1="${x0}" y1="${base + R + 5}" x2="${x1}" y2="${base + R + 5}" stroke="var(--rule)" stroke-width="2" stroke-linecap="round"/>${ticks}
+      <text x="${x0 - 8}" y="${base + R + 9}" text-anchor="end" font-size="11" fill="var(--no)">${esc(ends[0])}</text>
+      <text x="${x1 + 8}" y="${base + R + 9}" font-size="11" fill="${opts.neutral ? "var(--muted)" : "var(--yes)"}">${esc(ends[1])}</text>
+      ${mean == null ? "" : `<path d="M${X(mean).toFixed(1)} ${base + R + 7} l-5 9 h10 z" fill="var(--ink)"/><text x="${X(mean).toFixed(1)}" y="${base + R + 28}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">평균 ${Math.round(mean)}</text>`}
+      ${dots}
+    </svg></div>`;
+}
+function distHTML() {
+  const byResp = RESP.map(r => ({ r, m: Object.fromEntries((r.rows || []).map(x => [x.id, x])) }));
+  let n = 0, html = `<p class="note dist-note">점 하나가 응답자 한 명이에요. 점을 누르면 그 사람의 유닛이 열리고, 점에 마우스를 올리면 닉네임과 답이 보여요. ▲는 평균이에요. 추가 질문은 그 질문이 열린 사람만 찍혀요.</p>`;
+  for (const s of SECTIONS) {
+    if (!s.qs) continue;
+    html += `<section class="dsec"><div class="unit-title">${shapeSVG(s.shape, s.color, 22)}<h3>${s.name}</h3></div>`;
+    // 항목별 평균 (기본 질문 평균) 분포
+    html += `<div class="dsub">항목별 평균</div>`;
+    for (const it of ITEMS) {
+      const sc = summaryCols().find(c => c.head === `${s.name} · ${it}`); if (!sc) continue;
+      const pts = byResp.map(({ r, m }) => { const v = summaryValue(m, sc); return v == null ? null : { v, name: r.nickname || "(이름 없음)", code: r.code, ans: `평균 ${v}` }; }).filter(Boolean);
+      html += distRow(it, `${it} 평균`, pts, ["낮음", "높음"]);
+    }
+    html += `<div class="dsub">질문별</div>`;
+    s.qs.forEach(q => {
+      n++;
+      const mk = (cfg, id) => byResp.map(({ r, m }) => { const x = m[id]; const v = distScale(cfg, x); return v == null ? null : { v, name: r.nickname || "(이름 없음)", code: r.code, ans: x.answer }; }).filter(Boolean);
+      const skipN = q.skip ? byResp.filter(({ m }) => m[q.id]?.answer === q.skip).length : 0;
+      html += distRow(String(n), q.text, mk(q, q.id), distEnds(q), { extra: skipN ? `${q.skip} ${skipN}명` : "" });
+      const fuPts = mk(q.fu, q.id + "__fu");
+      if (fuPts.length) html += distRow(`${n}-추가`, q.fu.text, fuPts, distEnds(q.fu), { fu: true, neutral: q.fu.type === "money" || q.fu.type === "people" });
+      else html += `<div class="drow dfu empty-fu"><div class="dq"><span class="dn">${n}-추가</span><span class="dt">${esc(q.fu.text)}</span><span class="dc">열린 사람 없음</span></div></div>`;
+    });
+    html += `</section>`;
+  }
+  return html;
+}
+document.addEventListener("click", e => { const d = e.target.closest("circle.dd"); if (d) openPerson(d.dataset.code); });
+
+function adminShell(inner) {
+  document.getElementById("nav").hidden = true;
+  document.getElementById("rail").hidden = true;
+  document.getElementById("stage").innerHTML = `<div class="admin"><h2>응답 모아 보기</h2>${inner}</div>`;
+}
+function backToSurvey() { history.replaceState(null, "", location.pathname); step = 0; document.getElementById("rail").hidden = false; renderStage(); window.scrollTo(0, 0); }
+
+let authReady = FB_OK ? new Promise(res => { const off = fauth.onAuthStateChanged(() => { off(); res(); }); }) : Promise.resolve();
+async function renderAdmin() {
+  await authReady;
+  if (!FB_OK) { adminShell(`<p class="empty" style="padding:0">테스트 화면에서는 응답 모아 보기를 쓸 수 없어요. 실제 사이트에서 열어 주세요.</p>`); return; }
+  const user = fauth.currentUser;
+  if (!user) {
+    adminShell(`<p class="empty" style="padding:0">제작팀 아이디와 비밀번호를 넣으면 응답을 볼 수 있어요.</p>
+      <form id="login-form" class="qlist" style="padding:18px 16px;gap:12px;display:flex;flex-direction:column">
+        <div class="field"><label class="text" for="admin-id">아이디</label>
+          <input type="text" id="admin-id" autocomplete="username" autocapitalize="off" style="letter-spacing:0;font-size:17px"></div>
+        <div class="field"><label class="text" for="admin-pw">비밀번호</label>
+          <input type="password" id="admin-pw" autocomplete="current-password" style="font: inherit;font-size:17px;padding:12px 14px;border-radius:10px;border:1px solid var(--rule);background:var(--bg);color:var(--ink)"></div>
+        <div class="bar"><button class="btn" id="back" type="button">설문으로 돌아가기</button>
+          <button class="btn primary" type="submit">들어가기</button></div>
+        <p class="status" id="csv-status"></p>
+      </form>`);
+    document.getElementById("back").addEventListener("click", backToSurvey);
+    document.getElementById("login-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const st = document.getElementById("csv-status");
+      let id = document.getElementById("admin-id").value.trim();
+      const pw = document.getElementById("admin-pw").value;
+      if (!id || !pw) { st.className = "status bad"; st.textContent = "아이디와 비밀번호를 모두 넣어 주세요."; return; }
+      if (!id.includes("@")) id = id + "@" + ADMIN_ID_DOMAIN;
+      try { await fauth.signInWithEmailAndPassword(id, pw); renderAdmin(); }
+      catch (err) { st.className = "status bad"; st.textContent = "아이디나 비밀번호가 맞지 않아요. 다시 확인해 주세요."; }
+    });
+    return;
+  }
+  adminShell(`<p class="empty">응답을 불러오는 중이에요.</p>`);
+  try {
+    const snap = await fdb.collection("responses").orderBy("createdAt", "desc").get();
+    RESP = snap.docs.map(d => d.data());
+  } catch (e) {
+    adminShell(`<p class="empty">이 아이디는 응답을 볼 권한이 없어요. 제작팀 아이디로 다시 들어와 주세요.</p>
+      <div class="bar"><button class="btn" id="back" type="button">설문으로 돌아가기</button>
+      <button class="btn" id="logout" type="button">로그아웃</button></div>`);
+    document.getElementById("back").addEventListener("click", backToSurvey);
+    document.getElementById("logout").addEventListener("click", async () => { await fauth.signOut(); renderAdmin(); });
+    return;
+  }
+  const cols = columns();
+  const fmtTime = t => { try { return new Date(t).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return t; } };
+  const byId = r => Object.fromEntries((r.rows || []).map(x => [x.id, x]));
+  const sums = summaryCols();
+  const body = RESP.map(r => {
+    const m = byId(r);
+    return `<tr><td><button class="who" type="button" data-code="${esc(r.code)}">${esc(r.nickname || "(이름 없음)")}</button></td><td>${esc(r.code)}</td><td>${esc(fmtTime(r.createdAt))}</td><td>${esc(r.open?.taste || "")}</td><td>${esc(r.open?.habit || "")}</td><td>${esc(r.open?.person || "")}</td>${cols.map(c => {
+      const x = m[c.id];
+      if (!x) return `<td class="none">·</td>`;
+      const sc = x.score ?? x.value;
+      if (isNumeric(c.id)) return `<td><span class="big">${sc ?? "·"}</span><span class="small">${esc(x.answer)}</span></td>`;
+      return `<td><span>${esc(x.answer)}</span>${sc != null ? `<span class="small">${sc}</span>` : ""}</td>`;
+    }).join("")}</tr>`;
+  }).join("");
+  adminShell(`
+    <div class="bar"><span class="count">응답 ${RESP.length}개</span>
+      <button class="btn" id="back" type="button">설문으로 돌아가기</button>
+      <button class="btn" id="reload" type="button">새로고침</button>
+      <button class="btn" id="reset" type="button" ${RESP.length ? "" : "disabled"}>초기화</button>
+      <button class="btn primary" id="csv" type="button" ${RESP.length ? "" : "disabled"}>스프레드시트로 받기</button>
+      <button class="linkbtn" id="logout" type="button">로그아웃</button></div>
+    <div class="bar" id="reset-confirm" hidden style="background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:14px 16px">
+      <span class="count" style="color:var(--ink)">응답 ${RESP.length}개를 모두 지울까요? 지운 응답은 되돌릴 수 없어요. 필요하면 먼저 스프레드시트로 받아 두세요.</span>
+      <button class="btn" id="reset-cancel" type="button">취소</button>
+      <button class="btn" id="reset-go" type="button" style="background:var(--warn);border-color:var(--warn);color:#fff">모두 지우기</button>
+    </div>
+    <p class="status" id="csv-status"></p>
+    ${RESP.length ? `<div class="vtabs" role="tablist"><button type="button" class="vtab" id="tab-table" aria-selected="${ADMIN_TAB === "table"}">표로 보기</button><button type="button" class="vtab" id="tab-dist" aria-selected="${ADMIN_TAB === "dist"}">분포로 보기</button></div>
+    <div id="dist-view" ${ADMIN_TAB === "dist" ? "" : "hidden"}>${distHTML()}</div>
+    <div class="tablewrap" id="table-view" ${ADMIN_TAB === "table" ? "" : "hidden"}><table class="resp"><thead><tr><th>닉네임</th><th>응답 번호</th><th>제출 시각</th><th>취향</th><th>비밀 습관</th><th>영향을 준 사람</th>${cols.map(c => `<th class="${c.fu ? "fu" : ""}" title="${esc(c.title)}">${c.head}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></div>`
+      : `<p class="empty">아직 제출된 응답이 없어요. 설문을 끝까지 답하고 제출하면 여기에 한 줄씩 쌓여요.</p>`}`);
+  document.getElementById("back").addEventListener("click", backToSurvey);
+  document.getElementById("reload").addEventListener("click", renderAdmin);
+  const setTab = t => { ADMIN_TAB = t; document.getElementById("dist-view").hidden = t !== "dist"; document.getElementById("table-view").hidden = t !== "table";
+    document.getElementById("tab-table").setAttribute("aria-selected", t === "table"); document.getElementById("tab-dist").setAttribute("aria-selected", t === "dist"); };
+  document.getElementById("tab-table")?.addEventListener("click", () => setTab("table"));
+  document.getElementById("tab-dist")?.addEventListener("click", () => setTab("dist"));
+  document.getElementById("csv").addEventListener("click", saveCSV);
+  document.getElementById("logout").addEventListener("click", async () => { await fauth.signOut(); renderAdmin(); });
+  const rc = document.getElementById("reset-confirm");
+  document.getElementById("reset").addEventListener("click", () => { rc.hidden = false; });
+  document.getElementById("reset-cancel").addEventListener("click", () => { rc.hidden = true; });
+  document.getElementById("reset-go").addEventListener("click", async () => {
+    const go = document.getElementById("reset-go");
+    go.disabled = true; go.textContent = "지우는 중";
+    try {
+      const snap = await fdb.collection("responses").get();
+      for (let i = 0; i < snap.docs.length; i += 400) {
+        const batch = fdb.batch();
+        snap.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      }
+      await renderAdmin();
+      const s2 = document.getElementById("csv-status"); if (s2) { s2.className = "status"; s2.textContent = "응답을 모두 지웠어요."; }
+    } catch (e) {
+      go.disabled = false; go.textContent = "모두 지우기";
+      const st = document.getElementById("csv-status"); st.className = "status bad"; st.textContent = "응답을 지우지 못했어요. 새로고침한 뒤 다시 해 주세요.";
+    }
+  });
+}
+function saveCSV() {
+  const cols = columns();
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const head = ["닉네임", "응답 번호", "제출 시각", "취향(초성)", "비밀 습관(초성)", "영향을 준 사람(초성)"];
+  cols.forEach(c => { head.push(`${c.head} 답`, `${c.head} 점수`); });
+  const sums = summaryCols();
+  sums.forEach(sc => head.push(`[평균] ${sc.head}`));
+  const lines = [head.map(q).join(",")];
+  const qrow = ["", "", "", "", "", ""];
+  cols.forEach(c => { qrow.push(c.title, ""); });
+  sums.forEach(() => qrow.push("기본 질문 점수 평균"));
+  lines.push(qrow.map(q).join(","));
+  RESP.forEach(r => {
+    const m = Object.fromEntries((r.rows || []).map(x => [x.id, x]));
+    const row = [r.nickname || "", r.code, r.createdAt, r.open?.taste, r.open?.habit, r.open?.person];
+    cols.forEach(c => { const x = m[c.id]; row.push(x ? x.answer : "·", x ? (x.score ?? x.value ?? "") : "·"); });
+    sums.forEach(sc => row.push(summaryValue(m, sc) ?? ""));
+    lines.push(row.map(q).join(","));
+  });
+  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  const d = new Date();
+  a.href = URL.createObjectURL(blob);
+  a.download = `N_unit_설문_응답_${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function route() {
+  if (location.hash === "#responses") renderAdmin();
+  else { document.getElementById("rail").hidden = false; renderStage(); }
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+
+</body>
+</html>
